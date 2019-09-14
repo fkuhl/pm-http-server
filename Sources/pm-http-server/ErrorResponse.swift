@@ -7,7 +7,7 @@
 
 import Foundation
 
-struct PeriMeleonResponse: Codable {
+struct ErrorResponse: Codable {
     let error: String
     let response: String
 }

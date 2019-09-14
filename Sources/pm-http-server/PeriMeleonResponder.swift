@@ -38,12 +38,20 @@ struct PeriMeleonResponder: HTTPServerResponder {
     }
 }
 
-public func makeResponse(status: HTTPResponseStatus, error: Error?, response: String) -> HTTPResponse {
+public func makeErrorResponse(status: HTTPResponseStatus, error: Error?, response: String) -> HTTPResponse {
     let errorString = error?.localizedDescription ?? ""
-    let responseObject = PeriMeleonResponse(error: errorString, response: response)
+    let responseObject = ErrorResponse(error: errorString, response: response)
     let encoder = JSONEncoder()
     encoder.outputFormatting = .prettyPrinted
     let responseBody = try! encoder.encode(responseObject)
+    let response = HTTPResponse(status: status, body: responseBody)
+    return response
+}
+
+public func makeResponse<R: Encodable>(status: HTTPResponseStatus, response: R) -> HTTPResponse {
+    let encoder = JSONEncoder()
+    encoder.outputFormatting = .prettyPrinted
+    let responseBody = try! encoder.encode(response)
     let response = HTTPResponse(status: status, body: responseBody)
     return response
 }

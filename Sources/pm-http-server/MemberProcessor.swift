@@ -8,18 +8,26 @@
 import HTTP
 
 class MemberProcessor {
+    private let memberStore = MemberStore.sharedInstance
     
     func process(path: String, operand: String) -> HTTPResponse {
         if path == "/member/create" {
             do {
-                let member = try JSONDecoder().decode(Member.Public.self,
+                let memberValue = try JSONDecoder().decode(Member.Value.self,
                 from: operand)
-                return makeResponse(status: .ok, error: nil, response: "got it")
+                let identified = memberStore.add(memberValue: memberValue)
+                let response = MemberCreateResponse(error: "", member: identified)
+                return makeResponse(status: .ok, response: response)
             } catch {
-                return makeResponse(status: .badRequest, error: error, response: path + ": invalid operand")
+                return makeErrorResponse(status: .badRequest, error: error, response: path + ": invalid operand")
             }
         } else {
-            return makeResponse(status: .badRequest, error: nil, response: "unrecognized op '\(path)'")
+            return makeErrorResponse(status: .badRequest, error: nil, response: "unrecognized op '\(path)'")
         }
     }
+}
+
+struct MemberCreateResponse: Encodable {
+    let error: String
+    let member: Member
 }
