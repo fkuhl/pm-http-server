@@ -26,15 +26,6 @@ struct PeriMeleonResponder: HTTPServerResponder {
         let response = memberProcessor.process(path: req.url.path,
                                                operand: String(data: bodyData, encoding: .utf8) ?? "")
         return worker.eventLoop.newSucceededFuture(result: response)
-//        do {
-//            let command = try JSONDecoder().decode(Command.self,
-//                                                   from: String(data: bodyData, encoding: .utf8) ?? "")
-//            let response = makeResponse(error: nil, response: "got it")
-//            return worker.eventLoop.newSucceededFuture(result: response)
-//        } catch {
-//            let response = makeResponse(error: error, response: "not even JSON, dude")
-//            return worker.eventLoop.newSucceededFuture(result: response)
-//        }
     }
 }
 

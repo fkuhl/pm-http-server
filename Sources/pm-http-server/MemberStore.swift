@@ -20,4 +20,25 @@ class MemberStore {
         nextSerial += 1
         return newOne
     }
+    
+    func read(id: Int) -> Member? {
+        return members[id]
+    }
+    
+    func readAll() -> [Member] {
+        return Array(members.values)
+    }
+    
+    func update(member: Member) -> Member? {
+        if members.keys.contains(member.id) {
+            members[member.id] = member
+            return member
+        } else {
+            return nil
+        }
+    }
+    
+    func delete(id: Int) -> Member? {
+        return members.removeValue(forKey: id)
+    }
 }
