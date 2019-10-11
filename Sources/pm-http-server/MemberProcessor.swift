@@ -9,16 +9,20 @@ import HTTP
 
 class MemberProcessor {
     private let memberStore = MemberStore.sharedInstance
+    private let mongoProxyStore = ThreadSpecificVariable<MongoProxy>()
     
-    func process(path: String, operand: String) -> HTTPResponse {
+    func process(path: String, operand: String, on eventLoop: EventLoop) -> HTTPResponse {
+        let mongoProxy = getCurrentMongoProxy(on: eventLoop)
         if path == "/member/create" {
             do {
                 let memberValue = try JSONDecoder().decode(Member.Value.self,
                                                            from: operand)
-                let identified = memberStore.add(memberValue: memberValue)
+                let identified = try mongoProxy.add(memberValue: memberValue)
                 return makeResponse(status: .ok, response: identified)
-            } catch {
+            } catch let error as DecodingError  {
                 return makeErrorResponse(status: .badRequest, error: error, response: path + ": invalid operand")
+            } catch {
+                return makeErrorResponse(status: .internalServerError, error: error, response: path + ": add failed")
             }
         } else if path == "/member/read" {
             do {
@@ -60,6 +64,15 @@ class MemberProcessor {
         } else {
             return makeErrorResponse(status: .badRequest, error: nil, response: "unrecognized op '\(path)'")
         }
+    }
+    
+    private func getCurrentMongoProxy(on eventLoop: EventLoop) -> MongoProxy {
+        if let currentProxy = mongoProxyStore.currentValue {
+            return currentProxy
+        }
+        let newProxy = MongoProxy(on: eventLoop)
+        mongoProxyStore.currentValue = newProxy
+        return newProxy
     }
 }
 

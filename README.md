@@ -7,7 +7,7 @@ The HTTP method is ignored.
 The URL specifies the operation.
 The operand, if any, is in JSON; operand varies by operation.
 
-The response is JSON. If the HTTP status return is anything but OK, the response takes for form:
+The response is JSON. If the HTTP status return is anything but OK, the response takes the form:
 {"error": <string from bowels of the applicatiopn>, "response": <string that might tell you something>  }
 If the HTTP status is OK, the response will be JSON whose form depends on the operation.
 
