@@ -23,6 +23,6 @@ struct Member: Encodable, Decodable {
         }
     }
     
-    let id: Int
+    let id: String
     let value: Value
 }

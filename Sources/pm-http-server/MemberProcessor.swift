@@ -28,7 +28,7 @@ class MemberProcessor {
             do {
                 let idToRead = try JSONDecoder().decode(SingleID.self,
                                                         from: operand)
-                if let member = memberStore.read(id: idToRead.id) {
+                if let member = try mongoProxy.read(id: idToRead.id) {
                     return makeResponse(status: .ok, response: member)
                 } else {
                     return makeResponse(status: .notFound, response: "id \(idToRead.id) not found")
@@ -37,8 +37,12 @@ class MemberProcessor {
                 return makeErrorResponse(status: .badRequest, error: error, response: path + ": invalid operand")
             }
         } else if path == "/member/readAll" {
-            let members = memberStore.readAll()
-            return makeResponse(status: .ok, response: members)
+            do {
+                let members = try mongoProxy.readAll()
+                return makeResponse(status: .ok, response: members)
+            } catch {
+                return makeErrorResponse(status: .internalServerError, error: error, response: path + ": readAll failed")
+            }
         } else if path == "/member/update" {
             do {
                 let member = try JSONDecoder().decode(Member.self, from: operand)
@@ -77,5 +81,5 @@ class MemberProcessor {
 }
 
 struct SingleID: Decodable {
-    let id: Int
+    let id: String
 }

@@ -34,21 +34,54 @@ class MongoProxy {
         let document = try Document(fromJSON: memberValue.asJSONData())
         NSLog("about to insert")
         if let result = try memberCollection!.insertOne(document) {
+            let idAsString = "\(result.insertedId)"
             NSLog("insert returned id \(result.insertedId) of type \(result.insertedId.bsonType)")
-            return Member(id: 0, value: memberValue)
+            return Member(id: idAsString, value: memberValue)
         }
         NSLog("add returned nil")
         return nil
     }
     
-//    func read(id: Int) -> Member? {
-//        return members[id]
-//    }
-//
-//    func readAll() -> [Member] {
-//        return Array(members.values)
-//    }
-//
+    func read(id: String) throws -> Member? {
+        //TODO magic name
+        NSLog("about to retrieve collection")
+        let memberCollection = db?.collection("Members")
+        //TODO magic name!!!
+        guard let idValue = ObjectId(id) else {
+            NSLog("string \(id) didn't produce valid Object id")
+            return nil
+        }
+        let query: Document = ["_id": idValue]
+        NSLog("about to query for id \(idValue)")
+        let matched = try memberCollection!.find(query)
+        if let matchingDocument = matched.next() {
+            NSLog("read found id \(matchingDocument["_id"] ?? "nuthin"): '\(matchingDocument)'")
+            let trimmed = matchingDocument.dropFirst()
+            NSLog("Trimmed: '\(trimmed)'")
+            let value = try BSONDecoder().decode(Member.Value.self, from: matchingDocument)
+            return  Member(id: id, value: value)
+        }
+        return nil
+    }
+
+    func readAll() throws -> [Member] {
+        //TODO magic name
+        NSLog("about to retrieve collection")
+        let memberCollection = db?.collection("Members")
+        let everythingQuery: Document = []
+        let matched = try memberCollection!.find(everythingQuery)
+        var result = [Member]()
+        while let matchingDocument = matched.next() {
+            NSLog("read found id \(matchingDocument["_id"] ?? "nuthin"): '\(matchingDocument)'")
+            if let idElement = matchingDocument["_id"], idElement.bsonType == .objectId {
+                let trimmed = matchingDocument.dropFirst()
+                let value = try BSONDecoder().decode(Member.Value.self, from: trimmed)
+                result.append(Member(id: "\(idElement)", value: value))
+            }
+        }
+        return result
+    }
+
 //    func update(member: Member) -> Member? {
 //        if members.keys.contains(member.id) {
 //            members[member.id] = member
@@ -57,7 +90,7 @@ class MongoProxy {
 //            return nil
 //        }
 //    }
-//
+
 //    func delete(id: Int) -> Member? {
 //        return members.removeValue(forKey: id)
 //    }

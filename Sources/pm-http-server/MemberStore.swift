@@ -12,16 +12,16 @@ class MemberStore {
     static var sharedInstance = MemberStore()
 
     var nextSerial = 1776;
-    var members = [Int: Member]()
+    var members = [String: Member]()
     
     func add(memberValue: Member.Value) -> Member {
-        let newOne = Member(id: nextSerial, value: memberValue)
+        let newOne = Member(id: String(nextSerial), value: memberValue)
         members[newOne.id] = newOne
         nextSerial += 1
         return newOne
     }
     
-    func read(id: Int) -> Member? {
+    func read(id: String) -> Member? {
         return members[id]
     }
     
@@ -38,7 +38,7 @@ class MemberStore {
         }
     }
     
-    func delete(id: Int) -> Member? {
+    func delete(id: String) -> Member? {
         return members.removeValue(forKey: id)
     }
 }
