@@ -14,7 +14,7 @@ let server = try HTTPServer.start(
     responder: PeriMeleonResponder(),
     on: group
 ).wait()
-print("We're up...")
+print("We're up with \(System.coreCount) cores...")
 
 // Wait for the server to close (indefinitely).
 try server.onClose.wait()
