@@ -9,6 +9,8 @@ import HTTP
 import MongoSwift
 
 class MongoProxy {
+    //TODO: We're storing the event loop as if we were going to make the Mongo calls async
+    //but, for now, the async barrier is above this in the call stack
     private let eventLoop: EventLoop
     private var client: MongoClient?
     private var db: MongoDatabase?
@@ -27,8 +29,8 @@ class MongoProxy {
     }
     
     func add(memberValue: Member.Value) throws -> Member? {
-        //TODO magic name
         NSLog("about to retrieve collection")
+        //TODO magic name
         let memberCollection = db?.collection("Members")
         NSLog("about to encode doc")
         let document = try Document(fromJSON: memberValue.asJSONData())
@@ -43,21 +45,19 @@ class MongoProxy {
     }
     
     func read(id: String) throws -> Member? {
-        //TODO magic name
         NSLog("about to retrieve collection")
+        //TODO magic name
         let memberCollection = db?.collection("Members")
-        //TODO magic name!!!
         guard let idValue = ObjectId(id) else {
-            NSLog("string \(id) didn't produce valid Object id")
-            return nil
+            throw MongoError.invalidId(id)
         }
         let query: Document = ["_id": idValue]
         NSLog("about to query for id \(idValue)")
         let matched = try memberCollection!.find(query)
         if let matchingDocument = matched.next() {
             NSLog("read found id \(matchingDocument["_id"] ?? "nuthin"): '\(matchingDocument)'")
-            let trimmed = matchingDocument.dropFirst()
-            NSLog("Trimmed: '\(trimmed)'")
+            let shornOfId = matchingDocument.dropFirst()
+            NSLog("Shorn: '\(shornOfId)'")
             let value = try BSONDecoder().decode(Member.Value.self, from: matchingDocument)
             return  Member(id: id, value: value)
         }
@@ -65,8 +65,8 @@ class MongoProxy {
     }
 
     func readAll() throws -> [Member] {
-        //TODO magic name
         NSLog("about to retrieve collection")
+        //TODO magic name
         let memberCollection = db?.collection("Members")
         let everythingQuery: Document = []
         let matched = try memberCollection!.find(everythingQuery)
@@ -81,17 +81,32 @@ class MongoProxy {
         }
         return result
     }
-
-//    func update(member: Member) -> Member? {
-//        if members.keys.contains(member.id) {
-//            members[member.id] = member
-//            return member
-//        } else {
-//            return nil
-//        }
-//    }
+    
+    func update(member: Member) throws -> Bool {
+        NSLog("about to retrieve collection")
+        //TODO magic name
+        let memberCollection = db?.collection("Members")
+        guard let idValue = ObjectId(member.id) else {
+            throw MongoError.invalidId(member.id)
+        }
+        let filter: Document = ["_id": idValue]
+        let documentToUpdateTo = try Document(fromJSON: member.value.asJSONData())
+        NSLog("about to update \(member.id)")
+        let rawResult = try memberCollection?.replaceOne(
+            filter: filter,
+            replacement: documentToUpdateTo,
+            options: ReplaceOptions(upsert: false)) //don't insert if not present
+        guard let result = rawResult else {
+            return false
+        }
+        return result.matchedCount == 1
+    }
 
 //    func delete(id: Int) -> Member? {
 //        return members.removeValue(forKey: id)
 //    }
+}
+
+enum MongoError: Error {
+    case invalidId(String)
 }

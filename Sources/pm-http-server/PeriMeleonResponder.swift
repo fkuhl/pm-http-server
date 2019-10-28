@@ -26,7 +26,7 @@ struct PeriMeleonResponder: HTTPServerResponder {
         let response = memberProcessor.process(path: req.url.path,
                                                operand: String(data: bodyData, encoding: .utf8) ?? "",
                                                on: worker.eventLoop)
-        return worker.eventLoop.newSucceededFuture(result: response)
+        return response
     }
 }
 

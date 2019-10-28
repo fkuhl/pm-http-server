@@ -11,21 +11,31 @@ class MemberProcessor {
     private let memberStore = MemberStore.sharedInstance
     private let mongoProxyStore = ThreadSpecificVariable<MongoProxy>()
     
-    func process(path: String, operand: String, on eventLoop: EventLoop) -> HTTPResponse {
+    func process(path: String, operand: String, on eventLoop: EventLoop) -> EventLoopFuture<HTTPResponse> {
         let mongoProxy = getCurrentMongoProxy(on: eventLoop)
         switch path {
         case "/member/create":
-            return processCreate(path: path, mongoProxy: mongoProxy, operand: operand, on: eventLoop)
+            return eventLoop.submit {
+                return self.processCreate(path: path, mongoProxy: mongoProxy, operand: operand, on: eventLoop)
+            }
         case "/member/read":
-            return processRead(path: path, mongoProxy: mongoProxy, operand: operand, on: eventLoop)
+            return eventLoop.submit {
+                return self.processRead(path: path, mongoProxy: mongoProxy, operand: operand, on: eventLoop)
+            }
         case "/member/readAll":
-            return processReadAll(path: path, mongoProxy: mongoProxy, operand: operand, on: eventLoop)
+            return eventLoop.submit {
+                return self.processReadAll(path: path, mongoProxy: mongoProxy, operand: operand, on: eventLoop)
+            }
         case "/member/update":
-            return processUpdate(path: path, mongoProxy: mongoProxy, operand: operand, on: eventLoop)
+            return eventLoop.submit {
+                return self.processUpdate(path: path, mongoProxy: mongoProxy, operand: operand, on: eventLoop)
+            }
         case "/member/delete":
-            return processDelete(path: path, mongoProxy: mongoProxy, operand: operand, on: eventLoop)
+            return eventLoop.submit {
+                return self.processDelete(path: path, mongoProxy: mongoProxy, operand: operand, on: eventLoop)
+            }
         default:
-            return makeErrorResponse(status: .badRequest, error: nil, response: "unrecognized op '\(path)'")
+            return eventLoop.newSucceededFuture(result: makeErrorResponse(status: .badRequest, error: nil, response: "unrecognized op '\(path)'"))
         }
     }
     
@@ -37,6 +47,8 @@ class MemberProcessor {
         mongoProxyStore.currentValue = newProxy
         return newProxy
     }
+    
+    //MARK: Asynchronous work units
     
     private func processCreate(path: String, mongoProxy: MongoProxy, operand: String, on eventLoop: EventLoop) -> HTTPResponse {
         do {
@@ -77,8 +89,8 @@ class MemberProcessor {
     private func processUpdate(path: String, mongoProxy: MongoProxy, operand: String, on eventLoop: EventLoop) -> HTTPResponse {
         do {
             let member = try JSONDecoder().decode(Member.self, from: operand)
-            if let updated = memberStore.update(member: member) {
-                return makeResponse(status: .ok, response: updated)
+            if try mongoProxy.update(member: member) {
+                return makeResponse(status: .ok, response: member)
             } else {
                 return makeErrorResponse(status: .notFound, error: nil, response: path + ": id \(member.id) not found")
             }
