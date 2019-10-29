@@ -29,5 +29,9 @@ response is NOTFOUND if ID not found, or updated Member
 
 ## URL = "/member/delete"
 request is  {"id":<id of Member to delete>}
-response is NOTFOUND if ID not found, or deleted Member
+response is NOTFOUND if ID not found, or ID of deleted Member
+
+## URL = "/member/drop"
+request is  {} (needs to be not just nothing )
+response is mere happiness
 

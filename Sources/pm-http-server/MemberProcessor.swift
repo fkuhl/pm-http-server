@@ -34,6 +34,10 @@ class MemberProcessor {
             return eventLoop.submit {
                 return self.processDelete(path: path, mongoProxy: mongoProxy, operand: operand, on: eventLoop)
             }
+        case "/member/drop":
+            return eventLoop.submit {
+                return self.processDrop(path: path, mongoProxy: mongoProxy, on: eventLoop)
+            }
         default:
             return eventLoop.newSucceededFuture(result: makeErrorResponse(status: .badRequest, error: nil, response: "unrecognized op '\(path)'"))
         }
@@ -89,7 +93,7 @@ class MemberProcessor {
     private func processUpdate(path: String, mongoProxy: MongoProxy, operand: String, on eventLoop: EventLoop) -> HTTPResponse {
         do {
             let member = try JSONDecoder().decode(Member.self, from: operand)
-            if try mongoProxy.update(member: member) {
+            if try mongoProxy.replace(member: member) {
                 return makeResponse(status: .ok, response: member)
             } else {
                 return makeErrorResponse(status: .notFound, error: nil, response: path + ": id \(member.id) not found")
@@ -102,13 +106,22 @@ class MemberProcessor {
     private func processDelete(path: String, mongoProxy: MongoProxy, operand: String, on eventLoop: EventLoop) -> HTTPResponse {
         do {
             let idToDelete = try JSONDecoder().decode(SingleID.self, from: operand)
-            if let deleted = memberStore.delete(id: idToDelete.id) {
-                return makeResponse(status: .ok, response: deleted)
+            if try mongoProxy.delete(id: idToDelete.id) {
+                return makeResponse(status: .ok, response: "deleted id \(idToDelete.id)")
             } else {
                 return makeResponse(status: .notFound, response: "id \(idToDelete.id) not found")
             }
         } catch {
             return makeErrorResponse(status: .badRequest, error: error, response: path + ": invalid operand")
+        }
+    }
+
+    private func processDrop(path: String, mongoProxy: MongoProxy, on eventLoop: EventLoop) -> HTTPResponse {
+        do {
+            try mongoProxy.drop()
+            return makeResponse(status: .ok, response: "dropped")
+        } catch {
+            return makeErrorResponse(status: .badRequest, error: error, response: path)
         }
     }
 

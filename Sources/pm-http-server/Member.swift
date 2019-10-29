@@ -23,6 +23,6 @@ struct Member: Encodable, Decodable {
         }
     }
     
-    let id: String
+    let id: MongoId
     let value: Value
 }

@@ -8,6 +8,8 @@
 import HTTP
 import MongoSwift
 
+typealias MongoId = String
+
 class MongoProxy {
     //TODO: We're storing the event loop as if we were going to make the Mongo calls async
     //but, for now, the async barrier is above this in the call stack
@@ -44,7 +46,7 @@ class MongoProxy {
         return nil
     }
     
-    func read(id: String) throws -> Member? {
+    func read(id: MongoId) throws -> Member? {
         NSLog("about to retrieve collection")
         //TODO magic name
         let memberCollection = db?.collection("Members")
@@ -82,8 +84,8 @@ class MongoProxy {
         return result
     }
     
-    func update(member: Member) throws -> Bool {
-        NSLog("about to retrieve collection")
+    func replace(member: Member) throws -> Bool {
+        NSLog("about to replace doc")
         //TODO magic name
         let memberCollection = db?.collection("Members")
         guard let idValue = ObjectId(member.id) else {
@@ -101,10 +103,29 @@ class MongoProxy {
         }
         return result.matchedCount == 1
     }
-
-//    func delete(id: Int) -> Member? {
-//        return members.removeValue(forKey: id)
-//    }
+    
+    func delete(id: MongoId) throws -> Bool{
+        NSLog("about to delete doc")
+        //TODO magic name
+        let memberCollection = db?.collection("Members")
+        guard let idValue = ObjectId(id) else {
+            throw MongoError.invalidId(id)
+        }
+        let filter: Document = ["_id": idValue]
+        NSLog("about to delete \(id)")
+        let rawResult = try memberCollection?.deleteOne(filter)
+        guard let result = rawResult else {
+            return false
+        }
+        return result.deletedCount == 1
+    }
+    
+    func drop() throws {
+        NSLog("about to drop collection")
+        //TODO magic name
+        let memberCollection = db?.collection("Members")
+        try memberCollection?.drop()
+    }
 }
 
 enum MongoError: Error {
