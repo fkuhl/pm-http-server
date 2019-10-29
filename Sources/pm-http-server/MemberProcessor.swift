@@ -8,7 +8,6 @@
 import HTTP
 
 class MemberProcessor {
-    private let memberStore = MemberStore.sharedInstance
     private let mongoProxyStore = ThreadSpecificVariable<MongoProxy>()
     
     func process(path: String, operand: String, on eventLoop: EventLoop) -> EventLoopFuture<HTTPResponse> {
@@ -47,9 +46,16 @@ class MemberProcessor {
         if let currentProxy = mongoProxyStore.currentValue {
             return currentProxy
         }
-        let newProxy = MongoProxy(on: eventLoop)
-        mongoProxyStore.currentValue = newProxy
-        return newProxy
+        let newProxy = MongoProxy(collectionName: "Members")
+        do {
+            let count = try newProxy.count()
+            NSLog("proxy found \(count) documents")
+            mongoProxyStore.currentValue = newProxy
+            return newProxy
+        } catch {
+            NSLog("proxy doesnt appear to be connected: \(error)")
+            abort()
+        }
     }
     
     //MARK: Asynchronous work units

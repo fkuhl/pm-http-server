@@ -5,39 +5,36 @@
 //  Created by Frederick Kuhl on 10/11/19.
 //
 
-import HTTP
+import Foundation
 import MongoSwift
 
 typealias MongoId = String
 
 class MongoProxy {
-    //TODO: We're storing the event loop as if we were going to make the Mongo calls async
-    //but, for now, the async barrier is above this in the call stack
-    private let eventLoop: EventLoop
-    private var client: MongoClient?
-    private var db: MongoDatabase?
+    private let client: MongoClient
+    private let db: MongoDatabase
+    private let collection: MongoCollection<Document>
     
-    init(on eventLoop: EventLoop) {
-        do {
-            self.eventLoop = eventLoop
-            NSLog("about to connect to Mongo")
-            self.client = try MongoClient("mongodb://localhost:27017")
-            NSLog("connected")
-            self.db = client!.db("PeriMeleon")
-            NSLog("got DB")
-        } catch {
-            NSLog("blammo error \(error.localizedDescription)")
-        }
+    /**
+     Sets up the structures for the proxy.
+     This succeeds even if there is no DB server to connect to.
+     So 'twould be a good idea to use, say, count() to check the connection.
+     */
+    init(collectionName: String) {
+        client = try! MongoClient("mongodb://localhost:27017")
+        db = client.db("PeriMeleon")
+        collection = db.collection(collectionName)
+    }
+    
+    func count() throws -> Int {
+        return try collection.count()
     }
     
     func add(memberValue: Member.Value) throws -> Member? {
-        NSLog("about to retrieve collection")
-        //TODO magic name
-        let memberCollection = db?.collection("Members")
         NSLog("about to encode doc")
         let document = try Document(fromJSON: memberValue.asJSONData())
         NSLog("about to insert")
-        if let result = try memberCollection!.insertOne(document) {
+        if let result = try collection.insertOne(document) {
             let idAsString = "\(result.insertedId)"
             NSLog("insert returned id \(result.insertedId) of type \(result.insertedId.bsonType)")
             return Member(id: idAsString, value: memberValue)
@@ -47,15 +44,12 @@ class MongoProxy {
     }
     
     func read(id: MongoId) throws -> Member? {
-        NSLog("about to retrieve collection")
-        //TODO magic name
-        let memberCollection = db?.collection("Members")
         guard let idValue = ObjectId(id) else {
             throw MongoError.invalidId(id)
         }
         let query: Document = ["_id": idValue]
         NSLog("about to query for id \(idValue)")
-        let matched = try memberCollection!.find(query)
+        let matched = try collection.find(query)
         if let matchingDocument = matched.next() {
             NSLog("read found id \(matchingDocument["_id"] ?? "nuthin"): '\(matchingDocument)'")
             let shornOfId = matchingDocument.dropFirst()
@@ -67,11 +61,8 @@ class MongoProxy {
     }
 
     func readAll() throws -> [Member] {
-        NSLog("about to retrieve collection")
-        //TODO magic name
-        let memberCollection = db?.collection("Members")
         let everythingQuery: Document = []
-        let matched = try memberCollection!.find(everythingQuery)
+        let matched = try collection.find(everythingQuery)
         var result = [Member]()
         while let matchingDocument = matched.next() {
             NSLog("read found id \(matchingDocument["_id"] ?? "nuthin"): '\(matchingDocument)'")
@@ -85,16 +76,13 @@ class MongoProxy {
     }
     
     func replace(member: Member) throws -> Bool {
-        NSLog("about to replace doc")
-        //TODO magic name
-        let memberCollection = db?.collection("Members")
         guard let idValue = ObjectId(member.id) else {
             throw MongoError.invalidId(member.id)
         }
         let filter: Document = ["_id": idValue]
         let documentToUpdateTo = try Document(fromJSON: member.value.asJSONData())
         NSLog("about to update \(member.id)")
-        let rawResult = try memberCollection?.replaceOne(
+        let rawResult = try collection.replaceOne(
             filter: filter,
             replacement: documentToUpdateTo,
             options: ReplaceOptions(upsert: false)) //don't insert if not present
@@ -105,15 +93,12 @@ class MongoProxy {
     }
     
     func delete(id: MongoId) throws -> Bool{
-        NSLog("about to delete doc")
-        //TODO magic name
-        let memberCollection = db?.collection("Members")
         guard let idValue = ObjectId(id) else {
             throw MongoError.invalidId(id)
         }
         let filter: Document = ["_id": idValue]
         NSLog("about to delete \(id)")
-        let rawResult = try memberCollection?.deleteOne(filter)
+        let rawResult = try collection.deleteOne(filter)
         guard let result = rawResult else {
             return false
         }
@@ -121,10 +106,7 @@ class MongoProxy {
     }
     
     func drop() throws {
-        NSLog("about to drop collection")
-        //TODO magic name
-        let memberCollection = db?.collection("Members")
-        try memberCollection?.drop()
+        try collection.drop()
     }
 }
 
