@@ -18,6 +18,7 @@ struct Member: Encodable, Decodable {
         let familyName: String
         let memberStatus: MemberStatus
         let dateJoined: Date
+        let dateMarried: Date?
 
         func asJSONData() -> Data  {
             return try! jsonEncoder.encode(self)
