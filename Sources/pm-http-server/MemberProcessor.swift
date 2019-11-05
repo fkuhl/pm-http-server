@@ -62,7 +62,7 @@ class MemberProcessor {
     
     private func processCreate(path: String, mongoProxy: MongoProxy, operand: String, on eventLoop: EventLoop) -> HTTPResponse {
         do {
-            let memberValue = try JSONDecoder().decode(Member.Value.self,
+            let memberValue = try jsonDecoder.decode(Member.Value.self,
                                                        from: operand)
             let identified = try mongoProxy.add(memberValue: memberValue)
             return makeResponse(status: .ok, response: identified)
@@ -75,7 +75,7 @@ class MemberProcessor {
     
     private func processRead(path: String, mongoProxy: MongoProxy, operand: String, on eventLoop: EventLoop) -> HTTPResponse {
         do {
-            let idToRead = try JSONDecoder().decode(SingleID.self,
+            let idToRead = try jsonDecoder.decode(SingleID.self,
                                                     from: operand)
             if let member = try mongoProxy.read(id: idToRead.id) {
                 return makeResponse(status: .ok, response: member)
@@ -98,7 +98,7 @@ class MemberProcessor {
     
     private func processUpdate(path: String, mongoProxy: MongoProxy, operand: String, on eventLoop: EventLoop) -> HTTPResponse {
         do {
-            let member = try JSONDecoder().decode(Member.self, from: operand)
+            let member = try jsonDecoder.decode(Member.self, from: operand)
             if try mongoProxy.replace(member: member) {
                 return makeResponse(status: .ok, response: member)
             } else {
@@ -111,7 +111,7 @@ class MemberProcessor {
     
     private func processDelete(path: String, mongoProxy: MongoProxy, operand: String, on eventLoop: EventLoop) -> HTTPResponse {
         do {
-            let idToDelete = try JSONDecoder().decode(SingleID.self, from: operand)
+            let idToDelete = try jsonDecoder.decode(SingleID.self, from: operand)
             if try mongoProxy.delete(id: idToDelete.id) {
                 return makeResponse(status: .ok, response: "deleted id \(idToDelete.id)")
             } else {

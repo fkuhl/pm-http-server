@@ -14,6 +14,16 @@ class MongoProxy {
     private let client: MongoClient
     private let db: MongoDatabase
     private let collection: MongoCollection<Document>
+    private let decoder: BSONDecoder = {
+        let formatter = DateFormatter()
+        formatter.dateFormat = "yyyy-MM-dd"
+        formatter.calendar = Calendar(identifier: .iso8601)
+        formatter.timeZone = TimeZone(secondsFromGMT: 0)
+        formatter.locale = Locale(identifier: "en_US_POSIX")
+        let d = BSONDecoder()
+        d.dateDecodingStrategy = .formatted(formatter)
+        return d
+    }()
     
     /**
      Sets up the structures for the proxy.
@@ -54,7 +64,7 @@ class MongoProxy {
             NSLog("read found id \(matchingDocument["_id"] ?? "nuthin"): '\(matchingDocument)'")
             let shornOfId = matchingDocument.dropFirst()
             NSLog("Shorn: '\(shornOfId)'")
-            let value = try BSONDecoder().decode(Member.Value.self, from: matchingDocument)
+            let value = try decoder.decode(Member.Value.self, from: matchingDocument)
             return  Member(id: id, value: value)
         }
         return nil
@@ -68,7 +78,7 @@ class MongoProxy {
             NSLog("read found id \(matchingDocument["_id"] ?? "nuthin"): '\(matchingDocument)'")
             if let idElement = matchingDocument["_id"], idElement.bsonType == .objectId {
                 let trimmed = matchingDocument.dropFirst()
-                let value = try BSONDecoder().decode(Member.Value.self, from: trimmed)
+                let value = try decoder.decode(Member.Value.self, from: trimmed)
                 result.append(Member(id: "\(idElement)", value: value))
             }
         }

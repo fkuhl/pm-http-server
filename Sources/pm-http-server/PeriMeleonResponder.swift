@@ -30,6 +30,29 @@ struct PeriMeleonResponder: HTTPServerResponder {
     }
 }
 
+public let dateFormatter: DateFormatter = {
+    let formatter = DateFormatter()
+    formatter.dateFormat = "yyyy-MM-dd"
+    formatter.calendar = Calendar(identifier: .iso8601)
+    formatter.timeZone = TimeZone(secondsFromGMT: 0)
+    formatter.locale = Locale(identifier: "en_US_POSIX")
+    return formatter
+}()
+
+public let jsonDecoder: JSONDecoder = {
+    let d = JSONDecoder()
+    d.dateDecodingStrategy = .formatted(dateFormatter)
+    return d
+}()
+
+public let jsonEncoder: JSONEncoder = {
+    let e = JSONEncoder()
+    e.dateEncodingStrategy = .formatted(dateFormatter)
+    e.outputFormatting = .prettyPrinted
+    return e
+}()
+
+
 public func makeErrorResponse(status: HTTPResponseStatus, error: Error?, response: String) -> HTTPResponse {
     let errorString = error?.localizedDescription ?? ""
     let responseObject = ErrorResponse(error: errorString, response: response)
@@ -41,9 +64,7 @@ public func makeErrorResponse(status: HTTPResponseStatus, error: Error?, respons
 }
 
 public func makeResponse<R: Encodable>(status: HTTPResponseStatus, response: R) -> HTTPResponse {
-    let encoder = JSONEncoder()
-    encoder.outputFormatting = .prettyPrinted
-    let responseBody = try! encoder.encode(response)
+    let responseBody = try! jsonEncoder.encode(response)
     let response = HTTPResponse(status: status, body: responseBody)
     return response
 }

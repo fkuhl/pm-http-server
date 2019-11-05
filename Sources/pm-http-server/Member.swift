@@ -17,9 +17,10 @@ struct Member: Encodable, Decodable {
         let givenName: String
         let familyName: String
         let memberStatus: MemberStatus
+        let dateJoined: Date
 
         func asJSONData() -> Data  {
-            return try! JSONEncoder().encode(self)
+            return try! jsonEncoder.encode(self)
         }
     }
     
