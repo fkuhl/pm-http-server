@@ -56,9 +56,7 @@ public let jsonEncoder: JSONEncoder = {
 public func makeErrorResponse(status: HTTPResponseStatus, error: Error?, response: String) -> HTTPResponse {
     let errorString = error?.localizedDescription ?? ""
     let responseObject = ErrorResponse(error: errorString, response: response)
-    let encoder = JSONEncoder()
-    encoder.outputFormatting = .prettyPrinted
-    let responseBody = try! encoder.encode(responseObject)
+    let responseBody = try! jsonEncoder.encode(responseObject)
     let response = HTTPResponse(status: status, body: responseBody)
     return response
 }
