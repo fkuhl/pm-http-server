@@ -4,6 +4,15 @@
 //
 //  Created by Frederick Kuhl on 9/12/19.
 //
+/**
+ It seems odd to split the value and the Mongo ID.
+ But this really is the best idea, for two reasons.
+ One, it isolates the the goofy MongoSwift version of the id from the rest of the code.
+ Nothing outside the MongoProxy need know anything about MongoSwift.
+ Two, having the guts of the structure separate from the id means it's easier to
+ duplicate the guts.
+ Just copy the structure with an assignment.
+ */
 
 import Foundation
 

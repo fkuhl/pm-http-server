@@ -37,89 +37,135 @@ class MongoProxy {
     }
     
     func count() throws -> Int {
-        return try collection.count()
+        do {
+            return try collection.count()
+        } catch {
+            throw MongoProxyError.mongoSwiftError(error)
+        }
     }
     
     func add(memberValue: Member.Value) throws -> Member? {
         NSLog("about to encode doc")
-        let document = try Document(fromJSON: memberValue.asJSONData())
-        NSLog("about to insert")
-        if let result = try collection.insertOne(document) {
-            let idAsString = "\(result.insertedId)"
-            NSLog("insert returned id \(result.insertedId) of type \(result.insertedId.bsonType)")
-            return Member(id: idAsString, value: memberValue)
+        do {
+            let document = try Document(fromJSON: memberValue.asJSONData())
+            NSLog("about to insert")
+            if let result = try collection.insertOne(document) {
+                //For insertedId, MongoSwift returns a BSONValue rather than ObjectId,
+                //so must convert to String sketchily
+                let idAsString = "\(result.insertedId)"
+                NSLog("insert returned id \(result.insertedId) of type \(result.insertedId.bsonType)")
+                return Member(id: idAsString, value: memberValue)
+            }
+            NSLog("add returned nil")
+            return nil
+        } catch let error as UserError {
+            throw MongoProxyError.jsonEncodingError(error)
+        } catch {
+            throw MongoProxyError.mongoSwiftError(error)
         }
-        NSLog("add returned nil")
-        return nil
     }
-    
+        
     func read(id: MongoId) throws -> Member? {
         guard let idValue = ObjectId(id) else {
-            throw MongoError.invalidId(id)
+            throw MongoProxyError.invalidId(id)
         }
-        let query: Document = ["_id": idValue]
-        NSLog("about to query for id \(idValue)")
-        let matched = try collection.find(query)
-        if let matchingDocument = matched.next() {
-            NSLog("read found id \(matchingDocument["_id"] ?? "nuthin"): '\(matchingDocument)'")
-            let shornOfId = matchingDocument.dropFirst()
-            NSLog("Shorn: '\(shornOfId)'")
-            let value = try decoder.decode(Member.Value.self, from: matchingDocument)
-            return  Member(id: id, value: value)
+        do {
+            let query: Document = ["_id": idValue]
+            NSLog("about to query for id \(idValue)")
+            let matched = try collection.find(query)
+            if let matchingDocument = matched.next() {
+                NSLog("read found id \(matchingDocument["_id"] ?? "nuthin"): '\(matchingDocument)'")
+                //Big Fat Assumption: the Document structure has ID as first element
+                let shornOfId = matchingDocument.dropFirst()
+                NSLog("Shorn: '\(shornOfId)'")
+                let value = try decoder.decode(Member.Value.self, from: matchingDocument)
+                return  Member(id: id, value: value)
+            }
+            return nil
+        } catch let error as DecodingError {
+            throw MongoProxyError.jsonDecodingError(error)
+        } catch {
+            throw MongoProxyError.mongoSwiftError(error)
         }
-        return nil
     }
 
     func readAll() throws -> [Member] {
-        let everythingQuery: Document = []
-        let matched = try collection.find(everythingQuery)
-        var result = [Member]()
-        while let matchingDocument = matched.next() {
-            NSLog("read found id \(matchingDocument["_id"] ?? "nuthin"): '\(matchingDocument)'")
-            if let idElement = matchingDocument["_id"], idElement.bsonType == .objectId {
-                let trimmed = matchingDocument.dropFirst()
-                let value = try decoder.decode(Member.Value.self, from: trimmed)
-                result.append(Member(id: "\(idElement)", value: value))
+        do {
+            let everythingQuery: Document = []
+            let matched = try collection.find(everythingQuery)
+            var result = [Member]()
+            while let matchingDocument = matched.next() {
+                NSLog("read found id \(matchingDocument["_id"] ?? "nuthin"): '\(matchingDocument)'")
+                if let idElement = matchingDocument["_id"], idElement.bsonType == .objectId {
+                    let trimmed = matchingDocument.dropFirst()
+                    let value = try decoder.decode(Member.Value.self, from: trimmed)
+                    result.append(Member(id: "\(idElement)", value: value))
+                }
             }
+            return result
+        } catch let error as DecodingError {
+            throw MongoProxyError.jsonDecodingError(error)
+        } catch {
+            throw MongoProxyError.mongoSwiftError(error)
         }
-        return result
     }
     
     func replace(member: Member) throws -> Bool {
         guard let idValue = ObjectId(member.id) else {
-            throw MongoError.invalidId(member.id)
+            throw MongoProxyError.invalidId(member.id)
         }
-        let filter: Document = ["_id": idValue]
-        let documentToUpdateTo = try Document(fromJSON: member.value.asJSONData())
-        NSLog("about to update \(member.id)")
-        let rawResult = try collection.replaceOne(
-            filter: filter,
-            replacement: documentToUpdateTo,
-            options: ReplaceOptions(upsert: false)) //don't insert if not present
-        guard let result = rawResult else {
-            return false
+        do {
+            let filter: Document = ["_id": idValue]
+            let documentToUpdateTo = try Document(fromJSON: member.value.asJSONData())
+            NSLog("about to update \(member.id)")
+            let rawResult = try collection.replaceOne(
+                filter: filter,
+                replacement: documentToUpdateTo,
+                options: ReplaceOptions(upsert: false)) //don't insert if not present
+            guard let result = rawResult else {
+                return false
+            }
+            return result.matchedCount == 1
+        } catch let error as UserError {
+            throw MongoProxyError.jsonEncodingError(error)
+        } catch {
+            throw MongoProxyError.mongoSwiftError(error)
         }
-        return result.matchedCount == 1
     }
     
     func delete(id: MongoId) throws -> Bool{
         guard let idValue = ObjectId(id) else {
-            throw MongoError.invalidId(id)
+            throw MongoProxyError.invalidId(id)
         }
-        let filter: Document = ["_id": idValue]
-        NSLog("about to delete \(id)")
-        let rawResult = try collection.deleteOne(filter)
-        guard let result = rawResult else {
-            return false
+        do {
+            let filter: Document = ["_id": idValue]
+            NSLog("about to delete \(id)")
+            let rawResult = try collection.deleteOne(filter)
+            guard let result = rawResult else {
+                return false
+            }
+            return result.deletedCount == 1
+        } catch {
+            throw MongoProxyError.mongoSwiftError(error)
         }
-        return result.deletedCount == 1
     }
     
     func drop() throws {
-        try collection.drop()
+        do {
+            try collection.drop()
+        } catch {
+            throw MongoProxyError.mongoSwiftError(error)
+        }
     }
 }
 
-enum MongoError: Error {
+enum MongoProxyError: Error {
+    //MongoSwift can't make this string into an ID
     case invalidId(String)
+    //Error encoding JSON into BSON Document to pass to MongoSwift
+    case jsonEncodingError(Error)
+    //Error decoding stuff received from MongoSwift into JSON
+    case jsonDecodingError(Error)
+    //Other error generated by MongoSwift
+    case mongoSwiftError (Error)
 }
