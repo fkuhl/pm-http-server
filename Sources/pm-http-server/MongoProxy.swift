@@ -40,14 +40,16 @@ class MongoProxy {
         return try collection.count()
     }
     
-    func add(memberValue: Member.Value) throws -> Member? {
+    func add(memberValue: Member) throws -> Member? {
         NSLog("about to encode doc")
         let document = try Document(fromJSON: memberValue.asJSONData())
         NSLog("about to insert")
         if let result = try collection.insertOne(document) {
             let idAsString = "\(result.insertedId)"
             NSLog("insert returned id \(result.insertedId) of type \(result.insertedId.bsonType)")
-            return Member(id: idAsString, value: memberValue)
+            var newMember = memberValue
+            newMember.setId(newVal: idAsString)
+            return newMember
         }
         NSLog("add returned nil")
         return nil
@@ -62,10 +64,17 @@ class MongoProxy {
         let matched = try collection.find(query)
         if let matchingDocument = matched.next() {
             NSLog("read found id \(matchingDocument["_id"] ?? "nuthin"): '\(matchingDocument)'")
-            let shornOfId = matchingDocument.dropFirst()
-            NSLog("Shorn: '\(shornOfId)'")
-            let value = try decoder.decode(Member.Value.self, from: matchingDocument)
-            return  Member(id: id, value: value)
+            do {
+                let found = try decoder.decode(Member.self, from: matchingDocument)
+                return found
+            } catch {
+                NSLog("decode failed on stuff returned from Mongo: \(error)")
+                throw error
+            }
+//            let shornOfId = matchingDocument.dropFirst()
+//            NSLog("Shorn: '\(shornOfId)'")
+//            let value = try decoder.decode(Member.Value.self, from: matchingDocument)
+//            return  Member(id: id, value: value)
         }
         return nil
     }
@@ -76,22 +85,24 @@ class MongoProxy {
         var result = [Member]()
         while let matchingDocument = matched.next() {
             NSLog("read found id \(matchingDocument["_id"] ?? "nuthin"): '\(matchingDocument)'")
-            if let idElement = matchingDocument["_id"], idElement.bsonType == .objectId {
-                let trimmed = matchingDocument.dropFirst()
-                let value = try decoder.decode(Member.Value.self, from: trimmed)
-                result.append(Member(id: "\(idElement)", value: value))
-            }
+            let found = try decoder.decode(Member.self, from: matchingDocument)
+            result.append(found)
+//            if let idElement = matchingDocument["_id"], idElement.bsonType == .objectId {
+//                let trimmed = matchingDocument.dropFirst()
+//                let value = try decoder.decode(Member.Value.self, from: trimmed)
+//                result.append(Member(id: "\(idElement)", value: value))
+//            }
         }
         return result
     }
     
     func replace(member: Member) throws -> Bool {
-        guard let idValue = ObjectId(member.id) else {
-            throw MongoError.invalidId(member.id)
+        guard let id = member._id, let idValue = ObjectId(id) else {
+            throw MongoError.invalidId(member._id ?? "nil id")
         }
         let filter: Document = ["_id": idValue]
-        let documentToUpdateTo = try Document(fromJSON: member.value.asJSONData())
-        NSLog("about to update \(member.id)")
+        let documentToUpdateTo = try Document(fromJSON: member.asJSONData())
+        NSLog("about to update \(member._id ?? "nil id")")
         let rawResult = try collection.replaceOne(
             filter: filter,
             replacement: documentToUpdateTo,

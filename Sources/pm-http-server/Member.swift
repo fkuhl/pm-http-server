@@ -13,18 +13,20 @@ enum MemberStatus: String, Encodable, Decodable {
 }
 
 struct Member: Encodable, Decodable {
-    struct Value: Encodable, Decodable {
-        let givenName: String
-        let familyName: String
-        let memberStatus: MemberStatus
-        let dateJoined: Date
-        let dateMarried: Date?
-
-        func asJSONData() -> Data  {
-            return try! jsonEncoder.encode(self)
-        }
+    let givenName: String
+    let familyName: String
+    let memberStatus: MemberStatus
+    let dateJoined: Date
+    let dateMarried: Date?
+    var _id: MongoId?
+    
+    func asJSONData() -> Data  {
+        return try! jsonEncoder.encode(self)
     }
     
-    let id: MongoId
-    let value: Value
+    mutating func setId(newVal: MongoId) {
+        _id = newVal
+    }
+    
 }
+

@@ -62,8 +62,7 @@ class MemberProcessor {
     
     private func processCreate(path: String, mongoProxy: MongoProxy, operand: String, on eventLoop: EventLoop) -> HTTPResponse {
         do {
-            let memberValue = try jsonDecoder.decode(Member.Value.self,
-                                                       from: operand)
+            let memberValue = try jsonDecoder.decode(Member.self, from: operand)
             let identified = try mongoProxy.add(memberValue: memberValue)
             return makeResponse(status: .ok, response: identified)
         } catch let error as DecodingError  {
@@ -77,13 +76,15 @@ class MemberProcessor {
         do {
             let idToRead = try jsonDecoder.decode(SingleID.self,
                                                     from: operand)
-            if let member = try mongoProxy.read(id: idToRead.id) {
+            if let member = try mongoProxy.read(id: idToRead._id) {
                 return makeResponse(status: .ok, response: member)
             } else {
-                return makeResponse(status: .notFound, response: "id \(idToRead.id) not found")
+                return makeResponse(status: .notFound, response: "id \(idToRead._id) not found")
             }
-        } catch {
+        } catch let error as DecodingError {
             return makeErrorResponse(status: .badRequest, error: error, response: path + ": invalid operand")
+        } catch {
+            return makeErrorResponse(status: .badRequest, error: error, response: path + ": some other error: \(error)")
         }
     }
     
@@ -92,7 +93,7 @@ class MemberProcessor {
             let members = try mongoProxy.readAll()
             return makeResponse(status: .ok, response: members)
         } catch {
-            return makeErrorResponse(status: .internalServerError, error: error, response: path + ": readAll failed")
+            return makeErrorResponse(status: .internalServerError, error: error, response: path + ": readAll failed: \(error)")
         }
     }
     
@@ -102,24 +103,30 @@ class MemberProcessor {
             if try mongoProxy.replace(member: member) {
                 return makeResponse(status: .ok, response: member)
             } else {
-                return makeErrorResponse(status: .notFound, error: nil, response: path + ": id \(member.id) not found")
+                return makeErrorResponse(status: .notFound,
+                                         error: nil,
+                                         response: path + ": id \(member._id ?? "nil id") not found")
             }
-        } catch {
-            return makeErrorResponse(status: .badRequest, error: error, response: path + ": invalid operand")
-        }
+            } catch let error as DecodingError {
+                return makeErrorResponse(status: .badRequest, error: error, response: path + ": invalid operand")
+            } catch {
+                return makeErrorResponse(status: .badRequest, error: error, response: path + ": some other error: \(error)")
+            }
     }
     
     private func processDelete(path: String, mongoProxy: MongoProxy, operand: String, on eventLoop: EventLoop) -> HTTPResponse {
         do {
             let idToDelete = try jsonDecoder.decode(SingleID.self, from: operand)
-            if try mongoProxy.delete(id: idToDelete.id) {
-                return makeResponse(status: .ok, response: "deleted id \(idToDelete.id)")
+            if try mongoProxy.delete(id: idToDelete._id) {
+                return makeResponse(status: .ok, response: "deleted id \(idToDelete._id)")
             } else {
-                return makeResponse(status: .notFound, response: "id \(idToDelete.id) not found")
+                return makeResponse(status: .notFound, response: "id \(idToDelete._id) not found")
             }
-        } catch {
-            return makeErrorResponse(status: .badRequest, error: error, response: path + ": invalid operand")
-        }
+            } catch let error as DecodingError {
+                return makeErrorResponse(status: .badRequest, error: error, response: path + ": invalid operand")
+            } catch {
+                return makeErrorResponse(status: .badRequest, error: error, response: path + ": some other error: \(error)")
+            }
     }
 
     private func processDrop(path: String, mongoProxy: MongoProxy, on eventLoop: EventLoop) -> HTTPResponse {
@@ -134,5 +141,5 @@ class MemberProcessor {
 }
 
 struct SingleID: Decodable {
-    let id: String
+    let _id: String
 }
