@@ -8,7 +8,13 @@
 import Foundation
 import MongoSwift
 
-typealias MongoId = String
+
+public enum CollectionName: String {
+    case members = "Members"
+    case households = "Households"
+    case addresses = "Addresses"
+}
+
 
 class MongoProxy {
     private let client: MongoClient
@@ -30,10 +36,10 @@ class MongoProxy {
      This succeeds even if there is no DB server to connect to.
      So 'twould be a good idea to use, say, count() to check the connection.
      */
-    init(collectionName: String) {
+    init(collectionName: CollectionName) {
         client = try! MongoClient("mongodb://localhost:27017")
         db = client.db("PeriMeleon")
-        collection = db.collection(collectionName)
+        collection = db.collection(collectionName.rawValue)
     }
     
     func count() throws -> Int {
@@ -44,17 +50,17 @@ class MongoProxy {
         }
     }
     
-    func add(memberValue: Member.Value) throws -> Member? {
+    func add<V: ValueType>(dataValue: V) throws -> Id? {
         NSLog("about to encode doc")
         do {
-            let document = try Document(fromJSON: memberValue.asJSONData())
+            let document = try Document(fromJSON: dataValue.asJSONData())
             NSLog("about to insert")
             if let result = try collection.insertOne(document) {
                 //For insertedId, MongoSwift returns a BSONValue rather than ObjectId,
                 //so must convert to String sketchily
                 let idAsString = "\(result.insertedId)"
                 NSLog("insert returned id \(result.insertedId) of type \(result.insertedId.bsonType)")
-                return Member(id: idAsString, value: memberValue)
+                return idAsString
             }
             NSLog("add returned nil")
             return nil
@@ -65,7 +71,7 @@ class MongoProxy {
         }
     }
         
-    func read(id: MongoId) throws -> Member? {
+    func read<V: ValueType>(id: Id) throws -> V? {
         guard let idValue = ObjectId(id) else {
             throw MongoProxyError.invalidId(id)
         }
@@ -78,8 +84,8 @@ class MongoProxy {
                 //Big Fat Assumption: the Document structure has ID as first element
                 let shornOfId = matchingDocument.dropFirst()
                 NSLog("Shorn: '\(shornOfId)'")
-                let value = try decoder.decode(Member.Value.self, from: matchingDocument)
-                return  Member(id: id, value: value)
+                let value = try decoder.decode(V.self, from: matchingDocument)
+                return  value
             }
             return nil
         } catch let error as DecodingError {
@@ -89,17 +95,17 @@ class MongoProxy {
         }
     }
 
-    func readAll() throws -> [Member] {
+    func readAll<D: DataType>() throws -> [D] {
         do {
             let everythingQuery: Document = []
             let matched = try collection.find(everythingQuery)
-            var result = [Member]()
+            var result = [D]()
             while let matchingDocument = matched.next() {
                 NSLog("read found id \(matchingDocument["_id"] ?? "nuthin"): '\(matchingDocument)'")
                 if let idElement = matchingDocument["_id"], idElement.bsonType == .objectId {
                     let trimmed = matchingDocument.dropFirst()
-                    let value = try decoder.decode(Member.Value.self, from: trimmed)
-                    result.append(Member(id: "\(idElement)", value: value))
+                    let value = try decoder.decode(D.V.self, from: trimmed)
+                    result.append(D(id: "\(idElement)", value: value))
                 }
             }
             return result
@@ -110,14 +116,14 @@ class MongoProxy {
         }
     }
     
-    func replace(member: Member) throws -> Bool {
-        guard let idValue = ObjectId(member.id) else {
-            throw MongoProxyError.invalidId(member.id)
+    func replace<D: DataType>(document: D) throws -> Bool {
+        guard let idValue = ObjectId(document.id) else {
+            throw MongoProxyError.invalidId(document.id)
         }
         do {
             let filter: Document = ["_id": idValue]
-            let documentToUpdateTo = try Document(fromJSON: member.value.asJSONData())
-            NSLog("about to update \(member.id)")
+            let documentToUpdateTo = try Document(fromJSON: document.value.asJSONData())
+            NSLog("about to update \(document.id)")
             let rawResult = try collection.replaceOne(
                 filter: filter,
                 replacement: documentToUpdateTo,
@@ -133,7 +139,7 @@ class MongoProxy {
         }
     }
     
-    func delete(id: MongoId) throws -> Bool{
+    func delete(id: Id) throws -> Bool{
         guard let idValue = ObjectId(id) else {
             throw MongoProxyError.invalidId(id)
         }

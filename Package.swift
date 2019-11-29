@@ -11,7 +11,7 @@ let package = Package(
     dependencies: [
         .package(url: "https://github.com/vapor/http.git", from: "3.0.0"),
         //.package(url: "https://github.com/mongodb/mongo-swift-driver.git", versions: Version(0,0,0)..<Version(10,0,0)),
-        .package(url: "https://github.com/mongodb/mongo-swift-driver.git", from: "0.0.3"),
+        .package(url: "https://github.com/mongodb/mongo-swift-driver.git", from: "0.1.3"),
     ],
     targets: [
         // Targets are the basic building blocks of a package. A target can define a module or a test suite.
