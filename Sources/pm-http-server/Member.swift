@@ -83,6 +83,7 @@ struct Member: DataType {
 struct MemberValue: ValueType {
     var familyName: String
     var givenName: String
+    /*
     var middleName: String?
     var previousFamilyName: String?
     var nameSuffix: String?
@@ -90,8 +91,9 @@ struct MemberValue: ValueType {
     var nickName: String?
     var sex: Sex
     var dateOfBirth: Date?
-    var placeOfBirth: String?
+    var placeOfBirth: String?  */
     var status: MemberStatus
+    /*
     var resident: Bool
     var exDirectory: Bool
     var household: Id
@@ -99,7 +101,9 @@ struct MemberValue: ValueType {
     var transactions: [Transaction]
     var maritalStatus: MaritalStatus
     var spouse: String?
+ */
     var dateOfMarriage: Date?
+    /*
     var divorce: String?
     var father: Id?
     var mother: Id?
@@ -112,4 +116,5 @@ struct MemberValue: ValueType {
     var baptism: String?
     var services: [Service]
     var dateLastChanged: Date?
+ */
 }

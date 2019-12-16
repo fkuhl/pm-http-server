@@ -12,7 +12,7 @@ The response is JSON. If the HTTP status return is anything but OK, the response
 If the HTTP status is OK, the response will be JSON whose form depends on the operation.
 
 ## URL = "/member/create"
-request is Member minus ID
+request is Member minus ID (MemberValue)
 response is ID
 
 ## URL = "/member/read"
@@ -24,7 +24,7 @@ request is {} (needs to be not just nothing )
 response is (possibly empty) array of Member
 
 ## URL = "/member/update"
-request is updated Member with ID
+request: Member, consisting of ID and MemberValue
 response is NOTFOUND if ID not found, or updated Member
 
 ## URL = "/member/delete"
@@ -37,7 +37,7 @@ request is  {} (needs to be not just nothing )
 response is mere happiness
 
 ## On return:
-1. Cut down Member to match the fields in pm-http-client and test current version with client.
+1. [done] Cut down Member to match the fields in pm-http-client and test current version with client.
 2. Create generic version of MemberProcessor.
 3. Generalize MemberProcessor to handle Households and Addresses.
 4. Begin building test client with UI.

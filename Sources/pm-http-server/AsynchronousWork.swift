@@ -69,8 +69,10 @@ func processUpdate<D: DataType>(path: String,
         } else {
             return makeErrorResponse(status: .notFound, error: nil, response: path + ": id \(member.id) not found")
         }
-    } catch {
+    } catch let error as DecodingError  {
         return makeErrorResponse(status: .badRequest, error: error, response: path + ": invalid operand")
+    } catch {
+        return makeErrorResponse(status: .badRequest, error: error, response: path + ": update failed")
     }
 }
 
@@ -85,8 +87,10 @@ func processDelete(path: String,
         } else {
             return makeResponse(status: .notFound, response: "id \(idToDelete.id) not found")
         }
-    } catch {
+    } catch let error as DecodingError  {
         return makeErrorResponse(status: .badRequest, error: error, response: path + ": invalid operand")
+    } catch {
+        return makeErrorResponse(status: .badRequest, error: error, response: path + ": delete failed")
     }
 }
 

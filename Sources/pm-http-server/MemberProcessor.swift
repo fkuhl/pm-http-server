@@ -12,6 +12,7 @@ class MemberProcessor {
     
     func process(path: String, operand: String, on eventLoop: EventLoop) -> EventLoopFuture<HTTPResponse> {
         let mongoProxy = getCurrentMongoProxy(on: eventLoop)
+        NSLog("dispatching \(path)")
         switch path {
         case "/member/create":
             return eventLoop.submit {
