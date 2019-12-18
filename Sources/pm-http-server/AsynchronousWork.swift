@@ -10,15 +10,11 @@ import HTTP
 
 func processCreate<V: ValueType>(path: String,
                                  mongoProxy: MongoProxy,
-                                 operand: String,
-                                 type: V.Type,
+                                 operand: V,
                                  on eventLoop: EventLoop) -> HTTPResponse {
     do {
-        let memberValue = try jsonDecoder.decode(type, from: operand)
-        let identified = try mongoProxy.add(dataValue: memberValue)
+        let identified = try mongoProxy.add(dataValue: operand)
         return makeResponse(status: .ok, response: identified)
-    } catch let error as DecodingError  {
-        return makeErrorResponse(status: .badRequest, error: error, response: path + ": invalid operand")
     } catch {
         return makeErrorResponse(status: .internalServerError, error: error, response: path + ": add failed")
     }
@@ -59,18 +55,15 @@ func processReadAll<D: DataType>(path: String,
 
 func processUpdate<D: DataType>(path: String,
                                 mongoProxy: MongoProxy,
-                                operand: String,
+                                operand: D,
                                 type: D.Type,
                                 on eventLoop: EventLoop) -> HTTPResponse {
     do {
-        let member = try jsonDecoder.decode(type, from: operand)
-        if try mongoProxy.replace(document: member) {
-            return makeResponse(status: .ok, response: member)
+        if try mongoProxy.replace(document: operand) {
+            return makeResponse(status: .ok, response: operand)
         } else {
-            return makeErrorResponse(status: .notFound, error: nil, response: path + ": id \(member.id) not found")
+            return makeErrorResponse(status: .notFound, error: nil, response: path + ": id \(operand.id) not found")
         }
-    } catch let error as DecodingError  {
-        return makeErrorResponse(status: .badRequest, error: error, response: path + ": invalid operand")
     } catch {
         return makeErrorResponse(status: .badRequest, error: error, response: path + ": update failed")
     }

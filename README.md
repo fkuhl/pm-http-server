@@ -38,6 +38,6 @@ response is mere happiness
 
 ## On return:
 1. [done] Cut down Member to match the fields in pm-http-client and test current version with client.
-2. Create generic version of MemberProcessor.
-3. Generalize MemberProcessor to handle Households and Addresses.
+2. [done] Create generic version of MemberProcessor.
+3. [done] Generalize MemberProcessor to handle Households and Addresses.
 4. Begin building test client with UI.

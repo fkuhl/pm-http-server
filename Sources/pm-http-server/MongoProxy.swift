@@ -9,12 +9,6 @@ import Foundation
 import MongoSwift
 
 
-public enum CollectionName: String {
-    case members = "Members"
-    case households = "Households"
-    case addresses = "Addresses"
-}
-
 
 class MongoProxy {
     private let client: MongoClient
@@ -165,6 +159,7 @@ class MongoProxy {
     }
 }
 
+
 public enum MongoProxyError: Error, CustomStringConvertible {
     //MongoSwift can't make this string into an ID
     case invalidId(String)
@@ -182,9 +177,9 @@ public enum MongoProxyError: Error, CustomStringConvertible {
         case .jsonEncodingError(let underlying):
             return "JSON encoding error '\(underlying)'"
         case .jsonDecodingError(let underlying):
-            return "JSON encoding error '\(underlying)'"
+            return "JSON decoding error '\(underlying)'"
         case .mongoSwiftError(let underlying):
-            return "JSON encoding error '\(underlying)'"
+            return "Mongo Swift error '\(underlying)'"
         }
     }
 
