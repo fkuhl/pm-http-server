@@ -113,3 +113,12 @@ struct MemberValue: ValueType {
     var services: [Service]
     var dateLastChanged: Date?
 }
+
+/**This must be a separate function rather than a computed property, so as not to
+ interfere with JSON encoding and decoding . */
+func fullName(of member: MemberValue) -> String {
+    let previousContribution = member.previousFamilyName == nil ? "" : " (\(member.previousFamilyName!))"
+    let nickContribution = member.nickName == nil ? "" : " \"\(member.nickName!)\""
+    let middleContribution = member.middleName == nil ? "" : " \(member.middleName!)"
+    return "\(member.familyName), \(member.givenName)\(middleContribution)\(previousContribution)\(nickContribution)"
+}

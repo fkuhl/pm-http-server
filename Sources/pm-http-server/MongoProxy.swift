@@ -38,7 +38,7 @@ class MongoProxy {
     
     func count() throws -> Int {
         do {
-            return try collection.count()
+            return try collection.countDocuments()
         } catch {
             throw MongoProxyError.mongoSwiftError(error)
         }
@@ -50,11 +50,13 @@ class MongoProxy {
             let document = try Document(fromJSON: dataValue.asJSONData())
             NSLog("about to insert")
             if let result = try collection.insertOne(document) {
-                //For insertedId, MongoSwift returns a BSONValue rather than ObjectId,
-                //so must convert to String sketchily
-                let idAsString = "\(result.insertedId)"
-                NSLog("insert returned id \(result.insertedId) of type \(result.insertedId.bsonType)")
-                return idAsString
+                let idAsBson = result.insertedId
+                guard idAsBson.type == BSONType.objectId else {
+                    throw MongoProxyError.invalidId("returned id of unexpected type \(idAsBson.type)")
+                }
+                let idAsObjectId = idAsBson.objectIdValue
+                NSLog("insert returned id \(idAsObjectId?.hex ?? "nada") of type \(idAsBson.type)")
+                return idAsObjectId?.hex
             }
             NSLog("add returned nil")
             return nil
@@ -70,16 +72,20 @@ class MongoProxy {
             throw MongoProxyError.invalidId(id)
         }
         do {
-            let query: Document = ["_id": idValue]
+            let idBson = BSON.objectId(idValue)
+            let query: Document = ["_id": idBson]
             NSLog("about to query for id \(idValue)")
             let matched = try collection.find(query)
             if let matchingDocument = matched.next() {
-                NSLog("read found id \(matchingDocument["_id"] ?? "nuthin"): '\(matchingDocument)'")
-                //Big Fat Assumption: the Document structure has ID as first element
-                let shornOfId = matchingDocument.dropFirst()
-                NSLog("Shorn: '\(shornOfId)'")
-                let value = try decoder.decode(V.self, from: matchingDocument)
-                return  value
+                if let idBson = matchingDocument["_id"], let idAsObjectId = idBson.objectIdValue {
+                    let idString = idAsObjectId.hex
+                    NSLog("read found id \(idString): '\(matchingDocument)'")
+                    //Big Fat Assumption: the Document structure has ID as first element
+                    let shornOfId = matchingDocument.dropFirst()
+                    NSLog("Shorn: '\(shornOfId)'")
+                    let value = try decoder.decode(V.self, from: matchingDocument)
+                    return  value
+                }
             }
             return nil
         } catch let error as DecodingError {
@@ -91,15 +97,15 @@ class MongoProxy {
 
     func readAll<D: DataType>() throws -> [D] {
         do {
-            let everythingQuery: Document = []
+            let everythingQuery: Document = [:]
             let matched = try collection.find(everythingQuery)
             var result = [D]()
             while let matchingDocument = matched.next() {
-                NSLog("read found id \(matchingDocument["_id"] ?? "nuthin"): '\(matchingDocument)'")
-                if let idElement = matchingDocument["_id"], idElement.bsonType == .objectId {
+                if let idBson = matchingDocument["_id"], let idAsObjectId = idBson.objectIdValue {
+                    NSLog("read found id \(idAsObjectId.hex): '\(matchingDocument)'")
                     let trimmed = matchingDocument.dropFirst()
                     let value = try decoder.decode(D.V.self, from: trimmed)
-                    result.append(D(id: "\(idElement)", value: value))
+                    result.append(D(id: "\(idAsObjectId.hex)", value: value))
                 }
             }
             return result
@@ -115,7 +121,7 @@ class MongoProxy {
             throw MongoProxyError.invalidId(document.id)
         }
         do {
-            let filter: Document = ["_id": idValue]
+            let filter: Document = ["_id": BSON.objectId(idValue)]
             let documentToUpdateTo = try Document(fromJSON: document.value.asJSONData())
             NSLog("about to update \(document.id)")
             let rawResult = try collection.replaceOne(
@@ -138,7 +144,7 @@ class MongoProxy {
             throw MongoProxyError.invalidId(id)
         }
         do {
-            let filter: Document = ["_id": idValue]
+            let filter: Document = ["_id": BSON.objectId(idValue)]
             NSLog("about to delete \(id)")
             let rawResult = try collection.deleteOne(filter)
             guard let result = rawResult else {
