@@ -10,12 +10,6 @@ import HTTP
 class DataOperationsProcessor {
     private var mongoProxyStore = [CollectionName : ThreadSpecificVariable<MongoProxy>]()
     
-//    init() {
-//        for collection in CollectionName.allCases {
-//            mongoProxyStore[collection] = nil
-//        }
-//    }
-    
     func process(path: String, operand: String, on eventLoop: EventLoop) -> EventLoopFuture<HTTPResponse> {
         let pathComponents = path.split(separator: "/")
         guard pathComponents.count == 2 else {
