@@ -125,9 +125,13 @@ struct MemberValue: ValueType {
     
     /** A function, not computed property, because a computed property interferes with encoding and decoding. */
     func fullName() -> String {
-        let previousContribution = previousFamilyName == nil ? "" : " (\(previousFamilyName!))"
-        let nickContribution = nickName == nil ? "" : " \"\(nickName!)\""
-        let middleContribution = middleName == nil ? "" : " \(middleName!)"
+        let previousContribution = nugatory(previousFamilyName) ? "" : " (\(previousFamilyName!))"
+        let nickContribution = nugatory(nickName) ? "" : " \"\(nickName!)\""
+        let middleContribution = nugatory(middleName) ? "" : " \(middleName!)"
         return "\(familyName), \(givenName)\(middleContribution)\(previousContribution)\(nickContribution)"
     }
+}
+
+fileprivate func nugatory(_ thing: String?) -> Bool {
+    return thing == nil || thing == ""
 }
