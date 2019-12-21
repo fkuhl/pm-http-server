@@ -67,6 +67,16 @@ enum MemberStatus: String, Encodable, Decodable {
     case REMOVED
     case DEAD
     case PASTOR
+    
+    /** Function rather than computed property, because property would interfere with encoding and decoding. */
+    func isActive() -> Bool {
+        switch self {
+        case .NONCOMMUNING, .COMMUNING, .ASSOCIATE, .PASTOR, .SUSPENDED:
+            return true
+        default:
+            return false
+        }
+    }
 }
 
 enum MaritalStatus: String, Encodable, Decodable {
@@ -112,13 +122,12 @@ struct MemberValue: ValueType {
     var baptism: String?
     var services: [Service]
     var dateLastChanged: Date?
-}
-
-/**This must be a separate function rather than a computed property, so as not to
- interfere with JSON encoding and decoding . */
-func fullName(of member: MemberValue) -> String {
-    let previousContribution = member.previousFamilyName == nil ? "" : " (\(member.previousFamilyName!))"
-    let nickContribution = member.nickName == nil ? "" : " \"\(member.nickName!)\""
-    let middleContribution = member.middleName == nil ? "" : " \(member.middleName!)"
-    return "\(member.familyName), \(member.givenName)\(middleContribution)\(previousContribution)\(nickContribution)"
+    
+    /** A function, not computed property, because a computed property interferes with encoding and decoding. */
+    func fullName() -> String {
+        let previousContribution = previousFamilyName == nil ? "" : " (\(previousFamilyName!))"
+        let nickContribution = nickName == nil ? "" : " \"\(nickName!)\""
+        let middleContribution = middleName == nil ? "" : " \(middleName!)"
+        return "\(familyName), \(givenName)\(middleContribution)\(previousContribution)\(nickContribution)"
+    }
 }
