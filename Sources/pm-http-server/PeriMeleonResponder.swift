@@ -6,6 +6,7 @@
 //
 
 import HTTP
+import PMDataTypes
 
 /// Responds to all incoming
 struct PeriMeleonResponder: HTTPServerResponder {

@@ -6,6 +6,7 @@
 //
 
 import HTTP
+import PMDataTypes
 
 class DataOperationsProcessor {
     private var mongoProxyStore = [CollectionName : ThreadSpecificVariable<MongoProxy>]()

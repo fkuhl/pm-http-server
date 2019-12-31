@@ -7,8 +7,7 @@
 
 import Foundation
 import MongoSwift
-
-
+import PMDataTypes
 
 class MongoProxy {
     private let client: MongoClient
@@ -105,7 +104,7 @@ class MongoProxy {
                     //NSLog("read found id \(idAsObjectId.hex): '\(matchingDocument)'")
                     let trimmed = matchingDocument.dropFirst()
                     let value = try decoder.decode(D.V.self, from: trimmed)
-                    result.append(D(id: "\(idAsObjectId.hex)", value: value))
+                    result.append(D.init(id: "\(idAsObjectId.hex)", value: value))
                 }
             }
             return result
