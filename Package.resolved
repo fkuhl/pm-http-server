@@ -38,6 +38,15 @@
         }
       },
       {
+        "package": "PMDataTypes",
+        "repositoryURL": "file:///Users/fkuhl/Documents/workspace/pm-http/pm-data-types/PMDataTypes",
+        "state": {
+          "branch": null,
+          "revision": "4865e4c41357ec9afb2fd7a10ea9fff43ea4e622",
+          "version": "2.0.0"
+        }
+      },
+      {
         "package": "bson",
         "repositoryURL": "https://github.com/mongodb/swift-bson",
         "state": {
