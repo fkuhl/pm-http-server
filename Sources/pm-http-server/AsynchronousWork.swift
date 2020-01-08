@@ -85,7 +85,7 @@ func processDelete(path: String,
     } catch let error as DecodingError  {
         return makeErrorResponse(status: .badRequest, error: error, response: path + ": invalid operand")
     } catch {
-        return makeErrorResponse(status: .badRequest, error: error, response: path + ": delete failed")
+        return makeErrorResponse(status: .internalServerError, error: error, response: path + ": delete failed")
     }
 }
 

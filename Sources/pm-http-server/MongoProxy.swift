@@ -104,13 +104,13 @@ class MongoProxy {
                 if let idBson = matchingDocument["_id"], let idAsObjectId = idBson.objectIdValue {
                     docNo += 1
                     let trimmed = matchingDocument.dropFirst()
-                    do {
+//                    do {
                         let value = try decoder.decode(D.V.self, from: trimmed)
                         result.append(D.init(id: "\(idAsObjectId.hex)", value: value))
-                    } catch {
-                        NSLog("doc no \(docNo): read found id \(idAsObjectId.hex): '\(matchingDocument)'")
-                        NSLog("decode from BSON failed: \(error.localizedDescription)")
-                    }
+//                    } catch {
+//                        NSLog("doc no \(docNo): read found id \(idAsObjectId.hex): '\(matchingDocument)'")
+//                        NSLog("decode from BSON failed: \(error.localizedDescription)")
+//                    }
                 } else {
                     NSLog("can't extract id for \(matchingDocument)")
                 }
