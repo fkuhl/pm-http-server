@@ -11,33 +11,30 @@ The response is JSON. If the HTTP status return is anything but OK, the response
 {"error": <string from bowels of the applicatiopn>, "response": <string that might tell you something>  }
 If the HTTP status is OK, the response will be JSON whose form depends on the operation.
 
-## URL = "/member/create"
+## URL = "/Members/create"
 request is Member minus ID (MemberValue)
 response is ID
 
-## URL = "/member/read"
+## URL = "/Members/read"
 request is {"id":<id of Member to read>}
 response is Member or  NOTFOUND
 
-## URL = "/member/readAll"
+## URL = "/Members/readAll"
 request is {} (needs to be not just nothing )
 response is (possibly empty) array of Member
 
-## URL = "/member/update"
+## URL = "/Members/update"
 request: Member, consisting of ID and MemberValue
 response is NOTFOUND if ID not found, or updated Member
 
-## URL = "/member/delete"
+## URL = "/Members/delete"
 request is  {"id":<id of Member to delete>}
 response is NOTFOUND if ID not found, or ID of deleted Member
 _THIS DOES NOT HANDLE REFERENCES!_
+That is, references to the Member in Household aren't cleaned up by this step.
 
-## URL = "/member/drop"
+## URL = "/Members/drop"
 request is  {} (needs to be not just nothing )
 response is mere happiness
 
-## On return:
-1. [done] Cut down Member to match the fields in pm-http-client and test current version with client.
-2. [done] Create generic version of MemberProcessor.
-3. [done] Generalize MemberProcessor to handle Households and Addresses.
-4. Begin building test client with UI.
+## For the other document types, replace "Members" with "Households" or "Addresses"
