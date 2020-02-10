@@ -13,14 +13,20 @@ struct PeriMeleonResponder: HTTPServerResponder {
     private let dataOperationsProcessor = DataOperationsProcessor()
     
     func respond(to req: HTTPRequest, on worker: Worker) -> Future<HTTPResponse> {
-        guard let bodyData = req.body.data else {
-            print("no data in body")
-            let res = HTTPResponse(status: .badRequest) //TODO need another status
-            return worker.eventLoop.newSucceededFuture(result: res)
+//        guard let bodyData = req.body.data else {
+//            print("no data in body")
+//            let res = HTTPResponse(status: .badRequest) //TODO need another status
+//            return worker.eventLoop.newSucceededFuture(result: res)
+//        }
+        let bodyText: String
+        if let bodyData = req.body.data {
+            bodyText = String(data: bodyData, encoding: .utf8) ?? ""
+        } else {
+            bodyText = ""
         }
-        print("Received: \(req.body)")
-        let response = dataOperationsProcessor.process(path: req.url.path,
-                                               operand: String(data: bodyData, encoding: .utf8) ?? "",
+        print("Received: '\(req.body)'")
+        let response = dataOperationsProcessor.process(url: req.url,
+                                               operand: bodyText,
                                                on: worker.eventLoop)
         return response
     }

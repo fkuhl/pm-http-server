@@ -23,19 +23,15 @@ func processCreate<V: ValueType>(path: String,
 
 func processRead<V: ValueType>(path: String,
                                mongoProxy: MongoProxy,
-                               operand: String,
+                               idToRead: Id,
                                type: V.Type,
                                on eventLoop: EventLoop) -> HTTPResponse {
     do {
-        let idToRead = try jsonDecoder.decode(SingleID.self,
-                                              from: operand)
-        if let value: V = try mongoProxy.read(id: idToRead.id) {
+        if let value: V = try mongoProxy.read(id: idToRead) {
             return makeResponse(status: .ok, response: value)
         } else {
-            return makeResponse(status: .notFound, response: "id \(idToRead.id) not found")
+            return makeResponse(status: .notFound, response: "id \(idToRead) not found")
         }
-    } catch let error as DecodingError  {
-        return makeErrorResponse(status: .badRequest, error: error, response: path + ": invalid operand")
     } catch {
         return makeErrorResponse(status: .internalServerError, error: error, response: path + ": read failed")
     }
@@ -43,7 +39,6 @@ func processRead<V: ValueType>(path: String,
 
 func processReadAll<D: DataType>(path: String,
                                  mongoProxy: MongoProxy,
-                                 operand: String,
                                  type: D.Type,
                                  on eventLoop: EventLoop) -> HTTPResponse {
     do {
@@ -73,14 +68,13 @@ func processUpdate<D: DataType>(path: String,
 
 func processDelete(path: String,
                    mongoProxy: MongoProxy,
-                   operand: String,
+                   idToDelete: Id,
                    on eventLoop: EventLoop) -> HTTPResponse {
     do {
-        let idToDelete = try jsonDecoder.decode(SingleID.self, from: operand)
-        if try mongoProxy.delete(id: idToDelete.id) {
-            return makeResponse(status: .ok, response: "deleted id \(idToDelete.id)")
+        if try mongoProxy.delete(id: idToDelete) {
+            return makeResponse(status: .ok, response: "deleted id \(idToDelete)")
         } else {
-            return makeResponse(status: .notFound, response: "id \(idToDelete.id) not found")
+            return makeResponse(status: .notFound, response: "id \(idToDelete) not found")
         }
     } catch let error as DecodingError  {
         return makeErrorResponse(status: .badRequest, error: error, response: path + ": invalid operand")

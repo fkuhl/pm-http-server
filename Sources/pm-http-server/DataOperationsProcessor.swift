@@ -11,7 +11,11 @@ import PMDataTypes
 class DataOperationsProcessor {
     private var mongoProxyStore = [CollectionName : ThreadSpecificVariable<MongoProxy>]()
     
-    func process(path: String, operand: String, on eventLoop: EventLoop) -> EventLoopFuture<HTTPResponse> {
+    func process(url: URL, operand: String, on eventLoop: EventLoop) -> EventLoopFuture<HTTPResponse> {
+        guard let urlComponents = URLComponents(url: url, resolvingAgainstBaseURL: false) else {
+            return eventLoop.newSucceededFuture(result: makeErrorResponse(status: .badRequest, error: nil, response: "URL invalid: '\(url)'"))
+        }
+        let path = urlComponents.path
         let pathComponents = path.split(separator: "/")
         guard pathComponents.count == 2 else {
             return eventLoop.newSucceededFuture(result: makeErrorResponse(status: .badRequest, error: nil, response: "op path invalid: '\(path)'"))
@@ -47,25 +51,29 @@ class DataOperationsProcessor {
                 }
             }
         case .read:
+            guard let queryItems = urlComponents.queryItems, let first = queryItems.first, let id = first.value else {
+                return eventLoop.newSucceededFuture(result: makeErrorResponse(status: .badRequest, error: nil, response: "no query item for id"))
+            }
+            print("ops proc read id \(id)")
             return eventLoop.submit {
                 switch collection {
                 case .members:
-                    return processRead(path: path, mongoProxy: mongoProxy, operand: operand, type: MemberValue.self, on: eventLoop)
+                    return processRead(path: path, mongoProxy: mongoProxy, idToRead: id, type: MemberValue.self, on: eventLoop)
                 case .households:
-                    return processRead(path: path, mongoProxy: mongoProxy, operand: operand, type: HouseholdValue.self, on: eventLoop)
+                    return processRead(path: path, mongoProxy: mongoProxy, idToRead: id, type: HouseholdValue.self, on: eventLoop)
                 case .addresses:
-                    return processRead(path: path, mongoProxy: mongoProxy, operand: operand, type: AddressValue.self, on: eventLoop)
+                    return processRead(path: path, mongoProxy: mongoProxy, idToRead: id, type: AddressValue.self, on: eventLoop)
                 }
             }
         case .readAll:
             return eventLoop.submit {
                 switch collection {
                 case .members:
-                    return processReadAll(path: path, mongoProxy: mongoProxy, operand: operand, type: Member.self, on: eventLoop)
+                    return processReadAll(path: path, mongoProxy: mongoProxy, type: Member.self, on: eventLoop)
                 case .households:
-                    return processReadAll(path: path, mongoProxy: mongoProxy, operand: operand, type: Household.self, on: eventLoop)
+                    return processReadAll(path: path, mongoProxy: mongoProxy, type: Household.self, on: eventLoop)
                 case .addresses:
-                    return processReadAll(path: path, mongoProxy: mongoProxy, operand: operand, type: Address.self, on: eventLoop)
+                    return processReadAll(path: path, mongoProxy: mongoProxy, type: Address.self, on: eventLoop)
                 }
             }
         case .update:
@@ -87,8 +95,12 @@ class DataOperationsProcessor {
                 }
              }
         case .delete:
+            guard let queryItems = urlComponents.queryItems, let first = queryItems.first, let id = first.value else {
+                return eventLoop.newSucceededFuture(result: makeErrorResponse(status: .badRequest, error: nil, response: "no query item for id"))
+            }
+            print("ops proc read id \(id)")
             return eventLoop.submit {
-                return processDelete(path: path, mongoProxy: mongoProxy, operand: operand, on: eventLoop)
+                return processDelete(path: path, mongoProxy: mongoProxy, idToDelete: id, on: eventLoop)
             }
         case .drop:
             return eventLoop.submit {
