@@ -1,0 +1,24 @@
+version: "2.3"
+services:
+  db:
+    image: mongo:4.0.9
+    hostname: "db"
+    network_mode: host
+    ports:
+      - "27017:27017"
+    # volumes:
+    #   - ./data:/data/db
+    #   - ./out:/out
+  http-server:
+    build: .
+    network_mode: host
+    environment:
+      - DB_PORT_27017_TCP_ADDR=mongo
+    hostname: "http-server"
+    # volumes:
+    #   - /data/pm-http-server/out:/out
+    ports:
+      - "8123:8123"
+    depends_on:
+        - db
+    entrypoint: /bin/sh -c "cd /pm-web/pm-http-server && swift run"
