@@ -26,4 +26,4 @@ COPY Sources Sources/
 COPY Tests Tests/
 COPY Package.swift Package.swift
 RUN swift build
-ENTRYPOINT [ "/bin/sh", "-c", "cd /pm-web/pm-http-server && swift run" ]
+ENTRYPOINT [ "/bin/bash", "-c", "cd /pm-web/pm-http-server && swift run" ]

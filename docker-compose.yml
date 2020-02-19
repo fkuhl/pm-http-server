@@ -19,4 +19,4 @@ services:
       - "8123:8123"
     depends_on:
         - db
-    entrypoint: /bin/sh -c "cd /pm-web/pm-http-server && swift run"
+    entrypoint: /bin/bash -c "cd /pm-web/pm-http-server && swift run"
