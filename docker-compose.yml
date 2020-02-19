@@ -3,7 +3,6 @@ services:
   db:
     image: mongo:4.0.9
     hostname: "db"
-    network_mode: host
     ports:
       - "27017:27017"
     # volumes:
@@ -11,7 +10,6 @@ services:
     #   - ./out:/out
   http-server:
     build: .
-    network_mode: host
     environment:
       - DB_PORT_27017_TCP_ADDR=mongo
     hostname: "http-server"

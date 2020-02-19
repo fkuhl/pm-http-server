@@ -30,7 +30,7 @@ class MongoProxy {
      So 'twould be a good idea to use, say, count() to check the connection.
      */
     init(collectionName: CollectionName) {
-        client = try! MongoClient("mongodb://localhost:27017")
+        client = try! MongoClient("mongodb://db:27017")
         db = client.db("PeriMeleon")
         collection = db.collection(collectionName.rawValue)
     }

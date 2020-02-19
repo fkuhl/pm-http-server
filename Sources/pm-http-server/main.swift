@@ -10,7 +10,7 @@ defer { try! group.syncShutdownGracefully() }
 // Start an HTTPServer using our EchoResponder
 // We are fine to use `wait()` here since we are on the main thread.
 let server = try HTTPServer.start(
-    hostname: "localhost",
+    hostname: "0.0.0.0",
     port: 8123,
     responder: PeriMeleonResponder(),
     on: group
