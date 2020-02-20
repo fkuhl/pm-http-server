@@ -26,9 +26,13 @@ class DataOperationsProcessor {
         guard let operation = CrudOperation(rawValue: String(pathComponents[1])) else {
             return eventLoop.newSucceededFuture(result: makeErrorResponse(status: .badRequest, error: nil, response: "invalid op: '\(pathComponents[1])'"))
         }
-        
-        guard let mongoProxy = getCurrentMongoProxy(for: collection, on: eventLoop) else {
-            return eventLoop.newSucceededFuture(result: makeErrorResponse(status: .internalServerError, error: nil, response: "cannot connect to DB"))
+        let mongoProxy: MongoProxy
+        do {
+            mongoProxy = try getCurrentMongoProxy(for: collection, on: eventLoop)
+        } catch {
+            return eventLoop.newSucceededFuture(result: makeErrorResponse(status: .internalServerError,
+                                                                          error: MongoProxyError.proxyFailed(error),
+                                                                          response: "cannot connect to DB"))
         }
         NSLog("dispatching \(path)")
         switch operation {
@@ -111,7 +115,7 @@ class DataOperationsProcessor {
         }
     }
     
-    private func getCurrentMongoProxy(for collection: CollectionName, on eventLoop: EventLoop) -> MongoProxy? {
+    private func getCurrentMongoProxy(for collection: CollectionName, on eventLoop: EventLoop) throws -> MongoProxy {
         if let threadSpecificVariable = mongoProxyStore[collection], let currentProxy = threadSpecificVariable.currentValue {
             return currentProxy
         }
@@ -124,9 +128,6 @@ class DataOperationsProcessor {
             threadSpecificVariable!.currentValue = newProxy
             mongoProxyStore[collection] = threadSpecificVariable
             return newProxy
-        } catch {
-            NSLog("proxy doesn't appear to be connected: \(error)")
-            return nil
         }
     }
 
