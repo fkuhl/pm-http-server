@@ -27,7 +27,9 @@ class DataOperationsProcessor {
             return eventLoop.newSucceededFuture(result: makeErrorResponse(status: .badRequest, error: nil, response: "invalid op: '\(pathComponents[1])'"))
         }
         
-        let mongoProxy = getCurrentMongoProxy(for: collection, on: eventLoop)
+        guard let mongoProxy = getCurrentMongoProxy(for: collection, on: eventLoop) else {
+            return eventLoop.newSucceededFuture(result: makeErrorResponse(status: .internalServerError, error: nil, response: "cannot connect to DB"))
+        }
         NSLog("dispatching \(path)")
         switch operation {
         case .create:
@@ -109,7 +111,7 @@ class DataOperationsProcessor {
         }
     }
     
-    private func getCurrentMongoProxy(for collection: CollectionName, on eventLoop: EventLoop) -> MongoProxy {
+    private func getCurrentMongoProxy(for collection: CollectionName, on eventLoop: EventLoop) -> MongoProxy? {
         if let threadSpecificVariable = mongoProxyStore[collection], let currentProxy = threadSpecificVariable.currentValue {
             return currentProxy
         }
@@ -124,7 +126,7 @@ class DataOperationsProcessor {
             return newProxy
         } catch {
             NSLog("proxy doesn't appear to be connected: \(error)")
-            abort()
+            return nil
         }
     }
 
