@@ -31,7 +31,7 @@ class DataOperationsProcessor {
             mongoProxy = try getCurrentMongoProxy(for: collection, on: eventLoop)
         } catch {
             return eventLoop.newSucceededFuture(result: makeErrorResponse(status: .internalServerError,
-                                                                          error: MongoProxyError.proxyFailed(error),
+                                                                          error: error,
                                                                           response: "cannot connect to DB"))
         }
         NSLog("dispatching \(path)")
