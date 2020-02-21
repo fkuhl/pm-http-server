@@ -16,6 +16,10 @@ let server = try HTTPServer.start(
     on: group
 ).wait()
 print("We're up with \(System.coreCount) cores...")
+print("host '\(Host.current().localizedName ?? "")'")
+for interface in try! System.enumerateInterfaces() {
+    print("NIO interface name '\(interface.name)' addr '\(interface.address)'")
+}
 
 // Wait for the server to close (indefinitely).
 try server.onClose.wait()
