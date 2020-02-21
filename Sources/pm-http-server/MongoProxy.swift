@@ -33,7 +33,7 @@ class MongoProxy {
         #if os(OSX)
             client = try! MongoClient("mongodb://localhost:27017")
         #else
-            client = try! MongoClient("mongodb://db:27017")
+            client = try! MongoClient("mongodb://pm-http-server_db_1:27017")
         #endif
         db = client.db("PeriMeleon")
         collection = db.collection(collectionName.rawValue)
