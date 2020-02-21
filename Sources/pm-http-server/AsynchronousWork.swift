@@ -45,7 +45,7 @@ func processReadAll<D: DataType>(path: String,
         let matchingDocuments: [D] = try mongoProxy.readAll()
         return makeResponse(status: .ok, response: matchingDocuments)
     } catch {
-        NSLog("readAll failed: \(error.localizedDescription)")
+        print("readAll failed: \(error.localizedDescription)")
         return makeErrorResponse(status: .internalServerError, error: error, response: path + ": readAll failed")
     }
 }

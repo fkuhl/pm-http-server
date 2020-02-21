@@ -34,7 +34,7 @@ class DataOperationsProcessor {
                                                                           error: error,
                                                                           response: "cannot connect to DB"))
         }
-        NSLog("dispatching \(path)")
+        print("dispatching \(path)")
         switch operation {
         case .create:
             return eventLoop.submit {
@@ -122,7 +122,7 @@ class DataOperationsProcessor {
         let newProxy = MongoProxy(collectionName: collection)
         do {
             let count = try newProxy.count()
-            NSLog("proxy found \(count) documents")
+            print("proxy found \(count) documents")
             var threadSpecificVariable = mongoProxyStore[collection]
             if threadSpecificVariable == nil { threadSpecificVariable = ThreadSpecificVariable<MongoProxy>() }
             threadSpecificVariable!.currentValue = newProxy

@@ -48,20 +48,20 @@ class MongoProxy {
     }
     
     func add<V: ValueType>(dataValue: V) throws -> Id? {
-        NSLog("about to encode doc")
+        print("about to encode doc")
         do {
             let document = try Document(fromJSON: dataValue.asJSONData())
-            NSLog("about to insert")
+            print("about to insert")
             if let result = try collection.insertOne(document) {
                 let idAsBson = result.insertedId
                 guard idAsBson.type == BSONType.objectId else {
                     throw MongoProxyError.invalidId("returned id of unexpected type \(idAsBson.type)")
                 }
                 let idAsObjectId = idAsBson.objectIdValue
-                NSLog("insert returned id \(idAsObjectId?.hex ?? "nada") of type \(idAsBson.type)")
+                print("insert returned id \(idAsObjectId?.hex ?? "nada") of type \(idAsBson.type)")
                 return idAsObjectId?.hex
             }
-            NSLog("add returned nil")
+            print("add returned nil")
             return nil
         } catch let error as UserError {
             throw MongoProxyError.jsonEncodingError(error)
@@ -77,15 +77,15 @@ class MongoProxy {
         do {
             let idBson = BSON.objectId(idValue)
             let query: Document = ["_id": idBson]
-            NSLog("about to query for id \(idValue)")
+            print("about to query for id \(idValue)")
             let matched = try collection.find(query)
             if let matchingDocument = matched.next() {
                 if let idBson = matchingDocument["_id"], let idAsObjectId = idBson.objectIdValue {
                     let idString = idAsObjectId.hex
-                    NSLog("read found id \(idString): '\(matchingDocument)'")
+                    print("read found id \(idString): '\(matchingDocument)'")
                     //Big Fat Assumption: the Document structure has ID as first element
                     let shornOfId = matchingDocument.dropFirst()
-                    NSLog("Shorn: '\(shornOfId)'")
+                    print("Shorn: '\(shornOfId)'")
                     let value = try decoder.decode(V.self, from: matchingDocument)
                     return  value
                 }
@@ -112,15 +112,15 @@ class MongoProxy {
                         let value = try decoder.decode(D.V.self, from: trimmed)
                         result.append(D.init(id: "\(idAsObjectId.hex)", value: value))
                     } catch {
-                        NSLog("doc no \(docNo): read found id \(idAsObjectId.hex): '\(matchingDocument)'")
-                        NSLog("decode from BSON failed: \(error.localizedDescription)")
+                        print("doc no \(docNo): read found id \(idAsObjectId.hex): '\(matchingDocument)'")
+                        print("decode from BSON failed: \(error.localizedDescription)")
                         print(error)
                     }
                 } else {
-                    NSLog("can't extract id for \(matchingDocument)")
+                    print("can't extract id for \(matchingDocument)")
                 }
             }
-            NSLog("proxy read \(result.count) from collection \(collection.name)")
+            print("proxy read \(result.count) from collection \(collection.name)")
             return result
         } catch let error as DecodingError {
             throw MongoProxyError.jsonDecodingError(error)
@@ -136,7 +136,7 @@ class MongoProxy {
         do {
             let filter: Document = ["_id": BSON.objectId(idValue)]
             let documentToUpdateTo = try Document(fromJSON: document.value.asJSONData())
-            NSLog("about to update \(document.id)")
+            print("about to update \(document.id)")
             let rawResult = try collection.replaceOne(
                 filter: filter,
                 replacement: documentToUpdateTo,
@@ -158,7 +158,7 @@ class MongoProxy {
         }
         do {
             let filter: Document = ["_id": BSON.objectId(idValue)]
-            NSLog("about to delete \(id)")
+            print("about to delete \(id)")
             let rawResult = try collection.deleteOne(filter)
             guard let result = rawResult else {
                 return false
