@@ -6,6 +6,7 @@
 //
 
 import HTTP
+import Logging
 import PMDataTypes
 
 /// Responds to all incoming
@@ -19,7 +20,8 @@ struct PeriMeleonResponder: HTTPServerResponder {
         } else {
             bodyText = ""
         }
-        print("Received: '\(req.body)'")
+        logger[metadataKey: "request-uuid"] = "\(UUID())"
+        logger.info("Received: '\(req.body)'")
         let response = dataOperationsProcessor.process(url: req.url,
                                                operand: bodyText,
                                                on: worker.eventLoop)

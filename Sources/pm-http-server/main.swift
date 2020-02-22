@@ -1,5 +1,12 @@
 import HTTP
+import Logging
 
+LoggingSystem.bootstrap {
+    label in
+    return StreamLogHandler.standardOutput(label: label)
+}
+var logger = Logger(label: "com.tamelea.pm.http_server")
+logger.logLevel = .debug
 
 // Create an EventLoopGroup with an appropriate number
 // of threads for the system we are running on.
@@ -15,10 +22,10 @@ let server = try HTTPServer.start(
     responder: PeriMeleonResponder(),
     on: group
 ).wait()
-print("We're up with \(System.coreCount) cores...")
-print("host '\(Host.current().localizedName ?? "")'")
+logger.info("We're up with \(System.coreCount) cores...")
+logger.info("host '\(Host.current().localizedName ?? "")'")
 for interface in try! System.enumerateInterfaces() {
-    print("NIO interface name '\(interface.name)' addr '\(interface.address)'")
+    logger.info("NIO interface name '\(interface.name)' addr '\(interface.address)'")
 }
 
 // Wait for the server to close (indefinitely).

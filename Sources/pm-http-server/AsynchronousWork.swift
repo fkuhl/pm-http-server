@@ -6,6 +6,7 @@
 //
 
 import HTTP
+import Logging
 import PMDataTypes
 
 
@@ -45,7 +46,7 @@ func processReadAll<D: DataType>(path: String,
         let matchingDocuments: [D] = try mongoProxy.readAll()
         return makeResponse(status: .ok, response: matchingDocuments)
     } catch {
-        print("readAll failed: \(error.localizedDescription)")
+        logger.error("readAll failed: \(error.localizedDescription)")
         return makeErrorResponse(status: .internalServerError, error: error, response: path + ": readAll failed")
     }
 }

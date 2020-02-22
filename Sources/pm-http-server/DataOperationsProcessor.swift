@@ -6,6 +6,7 @@
 //
 
 import HTTP
+import Logging
 import PMDataTypes
 
 class DataOperationsProcessor {
@@ -34,7 +35,7 @@ class DataOperationsProcessor {
                                                                           error: error,
                                                                           response: "cannot connect to DB"))
         }
-        print("dispatching \(path)")
+        logger.info("dispatching \(path)")
         switch operation {
         case .create:
             return eventLoop.submit {
@@ -60,7 +61,7 @@ class DataOperationsProcessor {
             guard let queryItems = urlComponents.queryItems, let first = queryItems.first, let id = first.value else {
                 return eventLoop.newSucceededFuture(result: makeErrorResponse(status: .badRequest, error: nil, response: "no query item for id"))
             }
-            print("ops proc read id \(id)")
+            logger.info("ops proc read id \(id)")
             return eventLoop.submit {
                 switch collection {
                 case .members:
@@ -104,7 +105,7 @@ class DataOperationsProcessor {
             guard let queryItems = urlComponents.queryItems, let first = queryItems.first, let id = first.value else {
                 return eventLoop.newSucceededFuture(result: makeErrorResponse(status: .badRequest, error: nil, response: "no query item for id"))
             }
-            print("ops proc read id \(id)")
+            logger.info("ops proc read id \(id)")
             return eventLoop.submit {
                 return processDelete(path: path, mongoProxy: mongoProxy, idToDelete: id, on: eventLoop)
             }
@@ -122,7 +123,7 @@ class DataOperationsProcessor {
         let newProxy = MongoProxy(collectionName: collection)
         do {
             let count = try newProxy.count()
-            print("proxy found \(count) documents")
+            logger.info("proxy found \(count) documents")
             var threadSpecificVariable = mongoProxyStore[collection]
             if threadSpecificVariable == nil { threadSpecificVariable = ThreadSpecificVariable<MongoProxy>() }
             threadSpecificVariable!.currentValue = newProxy
