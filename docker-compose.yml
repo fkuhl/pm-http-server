@@ -2,7 +2,8 @@ version: "2.3"
 services:
   db:
     image: mongo:4.0.9
-    hostname: "db"
+    hostname: db
+    container_name: db
     ports:
       - "27017:27017"
     # volumes:
@@ -12,7 +13,8 @@ services:
     build: .
     environment:
       - DB_PORT_27017_TCP_ADDR=mongo
-    hostname: "http-server"
+    hostname: http-server
+    container_name: http-server
     # volumes:
     #   - /data/pm-http-server/out:/out
     ports:
