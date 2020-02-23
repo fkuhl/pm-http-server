@@ -18,8 +18,10 @@ var logLevels = [
 ]
 logger.logLevel = .debug
 if let logLevel = ProcessInfo.processInfo.environment["PM_LOG_LEVEL"] {
-    logger.logLevel = logLevels[logLevel]!
-    logger.info("Log level is \(logLevel)")
+    if let logLevel = logLevels[logLevel] {
+        logger.logLevel = logLevel
+        logger.info("Log level is \(logLevel)")
+    }
 }
 
 
