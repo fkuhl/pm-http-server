@@ -1,12 +1,27 @@
 import HTTP
 import Logging
+import Foundation
 
 LoggingSystem.bootstrap {
     label in
     return StreamLogHandler.standardOutput(label: label)
 }
 var logger = Logger(label: "com.tamelea.pm.http_server")
+var logLevels = [
+    "trace":    Logger.Level.trace,
+    "debug":    Logger.Level.debug,
+    "info":     Logger.Level.info,
+    "notice":   Logger.Level.notice,
+    "warning":  Logger.Level.warning,
+    "error":    Logger.Level.error,
+    "critical": Logger.Level.critical
+]
 logger.logLevel = .debug
+if let logLevel = ProcessInfo.processInfo.environment["PM_LOG_LEVEL"] {
+    logger.logLevel = logLevels[logLevel]!
+    logger.info("Log level is \(logLevel)")
+}
+
 
 // Create an EventLoopGroup with an appropriate number
 // of threads for the system we are running on.
