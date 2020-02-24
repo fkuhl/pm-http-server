@@ -6,8 +6,8 @@ services:
     container_name: db
     ports:
       - "27017:27017"
-    # volumes:
-    #   - ./data:/data/db
+    volumes:
+      - /opt/mongo-data:/data/db
     #   - ./out:/out
   http-server:
     build: .
