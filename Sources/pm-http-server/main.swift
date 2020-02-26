@@ -7,21 +7,11 @@ LoggingSystem.bootstrap {
     return StreamLogHandler.standardOutput(label: label)
 }
 var logger = Logger(label: "com.tamelea.pm.http_server")
-var logLevels = [
-    "trace":    Logger.Level.trace,
-    "debug":    Logger.Level.debug,
-    "info":     Logger.Level.info,
-    "notice":   Logger.Level.notice,
-    "warning":  Logger.Level.warning,
-    "error":    Logger.Level.error,
-    "critical": Logger.Level.critical
-]
 logger.logLevel = .debug
-if let logLevel = ProcessInfo.processInfo.environment["PM_LOG_LEVEL"] {
-    if let logLevel = logLevels[logLevel] {
-        logger.logLevel = logLevel
-        logger.info("Log level is \(logLevel)")
-    }
+if let logLevelEnv = ProcessInfo.processInfo.environment["PM_LOG_LEVEL"],
+    let logLevel = Logger.Level(rawValue: logLevelEnv) {
+    logger.logLevel = logLevel
+    logger.info("Log level set from environment: \(logLevel)")
 }
 
 

@@ -20,7 +20,7 @@ struct PeriMeleonResponder: HTTPServerResponder {
         } else {
             bodyText = ""
         }
-        logger[metadataKey: "request-uuid"] = "\(UUID())"
+        logger[metadataKey: "req"] = "\(UUID().uuidString.suffix(4))"
         logger.info("Received: '\(req.body)'")
         let response = dataOperationsProcessor.process(url: req.url,
                                                operand: bodyText,
@@ -32,6 +32,7 @@ struct PeriMeleonResponder: HTTPServerResponder {
 
 public func makeErrorResponse(status: HTTPResponseStatus, error: Error?, response: String) -> HTTPResponse {
     let errorString = error?.localizedDescription ?? ""
+    logger.error("Error reported, status: \(status.code), error: '\(errorString)', response: \(response)")
     let responseObject = ErrorResponse(error: errorString, response: response)
     let responseBody = try! jsonEncoder.encode(responseObject)
     let response = HTTPResponse(status: status, body: responseBody)
