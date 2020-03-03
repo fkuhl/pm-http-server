@@ -30,14 +30,14 @@ class MongoProxy {
      This succeeds even if there is no DB server to connect to.
      So 'twould be a good idea to use, say, count() to check the connection.
      */
-    init(collectionName: CollectionName) {
+    init() {
         #if os(OSX)
             client = try! MongoClient("mongodb://localhost:27017")
         #else
             client = try! MongoClient("mongodb://db:27017")
         #endif
         db = client.db("PeriMeleon")
-        collection = db.collection(collectionName.rawValue)
+        collection = db.collection(CollectionName.households.rawValue)
     }
     
     func count() throws -> Int {
@@ -48,7 +48,7 @@ class MongoProxy {
         }
     }
     
-    func add<V: ValueType>(dataValue: V) throws -> Id? {
+    func add(dataValue: HouseholdDocument) throws -> Id? {
         logger.debug("about to encode doc")
         do {
             let document = try Document(fromJSON: dataValue.asJSONData())
@@ -71,7 +71,7 @@ class MongoProxy {
         }
     }
         
-    func read<V: ValueType>(id: Id) throws -> V? {
+    func read(id: Id) throws -> HouseholdDocument? {
         guard let idValue = ObjectId(id) else {
             throw MongoProxyError.invalidId(id)
         }
@@ -85,10 +85,11 @@ class MongoProxy {
                     let idString = idAsObjectId.hex
                     logger.debug("read found id \(idString): '\(matchingDocument)'")
                     //Big Fat Assumption: the Document structure has ID as first element
-                    let shornOfId = matchingDocument.dropFirst()
+                    var shornOfId = matchingDocument.dropFirst()
                     logger.debug("Shorn: '\(shornOfId)'")
-                    let value = try decoder.decode(V.self, from: matchingDocument)
-                    return  value
+                    shornOfId[HouseholdDocument.idFieldName] = BSON.string(idString)
+                    let document = try decoder.decode(HouseholdDocument.self, from: shornOfId)
+                    return  document
                 }
             }
             return nil
@@ -99,19 +100,20 @@ class MongoProxy {
         }
     }
 
-    func readAll<D: DataType>() throws -> [D] {
+    func readAll() throws -> [HouseholdDocument] {
         do {
             let everythingQuery: Document = [:]
             let matched = try collection.find(everythingQuery)
-            var result = [D]()
+            var result = [HouseholdDocument]()
             var docNo = 0
             while let matchingDocument = matched.next() {
                 if let idBson = matchingDocument["_id"], let idAsObjectId = idBson.objectIdValue {
                     docNo += 1
-                    let trimmed = matchingDocument.dropFirst()
+                    var trimmed = matchingDocument.dropFirst()
+                    trimmed[HouseholdDocument.idFieldName] = BSON.string(idAsObjectId.hex)
                     do {
-                        let value = try decoder.decode(D.V.self, from: trimmed)
-                        result.append(D.init(id: "\(idAsObjectId.hex)", value: value))
+                        let value = try decoder.decode(HouseholdDocument.self, from: trimmed)
+                        result.append(value)
                     } catch {
                         logger.error("doc no \(docNo): read found id \(idAsObjectId.hex): '\(matchingDocument)'")
                         logger.error("decode from BSON failed: \(error.localizedDescription)")
@@ -130,13 +132,13 @@ class MongoProxy {
         }
     }
     
-    func replace<D: DataType>(document: D) throws -> Bool {
+    func replace(document: HouseholdDocument) throws -> Bool {
         guard let idValue = ObjectId(document.id) else {
             throw MongoProxyError.invalidId(document.id)
         }
         do {
             let filter: Document = ["_id": BSON.objectId(idValue)]
-            let documentToUpdateTo = try Document(fromJSON: document.value.asJSONData())
+            let documentToUpdateTo = try Document(fromJSON: document.asJSONData())
             logger.debug("about to update \(document.id)")
             let rawResult = try collection.replaceOne(
                 filter: filter,
@@ -153,22 +155,22 @@ class MongoProxy {
         }
     }
     
-    func delete(id: Id) throws -> Bool{
-        guard let idValue = ObjectId(id) else {
-            throw MongoProxyError.invalidId(id)
-        }
-        do {
-            let filter: Document = ["_id": BSON.objectId(idValue)]
-            logger.debug("about to delete \(id)")
-            let rawResult = try collection.deleteOne(filter)
-            guard let result = rawResult else {
-                return false
-            }
-            return result.deletedCount == 1
-        } catch let error as MongoError {
-            throw MongoProxyError.mongoSwiftError(error)
-        }
-    }
+//    func delete(id: Id) throws -> Bool{
+//        guard let idValue = ObjectId(id) else {
+//            throw MongoProxyError.invalidId(id)
+//        }
+//        do {
+//            let filter: Document = ["_id": BSON.objectId(idValue)]
+//            logger.debug("about to delete \(id)")
+//            let rawResult = try collection.deleteOne(filter)
+//            guard let result = rawResult else {
+//                return false
+//            }
+//            return result.deletedCount == 1
+//        } catch let error as MongoError {
+//            throw MongoProxyError.mongoSwiftError(error)
+//        }
+//    }
     
     func drop() throws {
         do {
