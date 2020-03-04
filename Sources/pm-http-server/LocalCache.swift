@@ -123,33 +123,40 @@ class LocalCache {
         }
     }
     
-    func createHousehold(data: NewFamilyData, on: EventLoop) -> HTTPResponse {
-        //TODO
-        makeResponse(status: .ok, response: "")
-    }
-    
-    func readHousehold(id: Id) -> HTTPResponse {
-        //TODO
-        makeResponse(status: .ok, response: "")
-    }
-    
-    func readAllHouseholds() -> HTTPResponse {
-        //TODO
-        makeResponse(status: .ok, response: "")
-    }
-    
-    func update(household: HouseholdDocument, on: EventLoop)-> HTTPResponse {
-        //TODO
-        makeResponse(status: .ok, response: "")
-    }
-    
-    func drop() -> HTTPResponse {
-        do {
-            try getCurrentMongoProxy().drop()
-            return makeResponse(status: .ok, response: "dropped")
-        } catch {
-            return makeErrorResponse(status: .badRequest, error: error, response: "drop")
+    func createHousehold(data: HouseholdDocument, on: EventLoop) throws -> HTTPResponse {
+        var storedHousehold = data
+        if let id = try getCurrentMongoProxy().add(dataValue: data) {
+            storedHousehold.id = id
+            return makeResponse(status: .ok, response: storedHousehold)
+        } else {
+            return makeResponse(status: .internalServerError, response: "something inexplicable occurred on create")
         }
+    }
+    
+    func readHousehold(id: Id) throws -> HTTPResponse {
+        if let household = try getCurrentMongoProxy().read(id: id) {
+            return makeResponse(status: .ok, response: household)
+        } else {
+            return makeResponse(status: .notFound, response: "Household \(id) not found")
+        }
+    }
+    
+    func readAllHouseholds() throws -> HTTPResponse {
+        let households = try getCurrentMongoProxy().readAll()
+        return makeResponse(status: .ok, response: households)
+    }
+    
+    func update(household: HouseholdDocument, on: EventLoop) throws -> HTTPResponse {
+        if try getCurrentMongoProxy().replace(document: household) {
+            return makeResponse(status: .ok, response: household)
+        } else {
+            return makeResponse(status: .notFound, response: "Household \(household.id) not found")
+        }
+    }
+    
+    func drop() throws -> HTTPResponse {
+        try getCurrentMongoProxy().drop()
+        return makeResponse(status: .ok, response: "dropped")
     }
     
     /**

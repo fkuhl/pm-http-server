@@ -12,9 +12,8 @@ The response is JSON. If the HTTP status return is anything but OK, the response
 If the HTTP status is OK, the response will be JSON whose form depends on the operation.
 
 ## URL = "/Members/create"
-method POST
-request body is Member minus ID (MemberValue), 
-response is ID
+Cannot create separate Member, only as part of a Household.
+response is BADREQUEST
 
 ## URL = "/Members/read"
 query parameter: id. So URL looks like "/Members/read?id=123456789abcdef"
@@ -29,20 +28,36 @@ response is (possibly empty) array of Member
 
 ## URL = "/Members/update"
 method POST
-request: Member, consisting of ID and MemberValue
-response is NOTFOUND if ID not found, or updated Member
-
-## URL = "/Members/delete"
-method DELETE
-query parameter: id. So URL looks like "/Members/delete?id=123456789abcdef"
-request body is empty
-response is NOTFOUND if ID not found, or ID of deleted Member
-_THIS DOES NOT HANDLE REFERENCES!_
-That is, references to the Member in Household aren't cleaned up by this step.
+request: Member
+response is NOTFOUND if ID not found; or OK and updated Member
+*NOTE:* The update is not allowed to change the Member's Household!
 
 ## URL = "/Members/drop"
-method POST
-request body is empty
-response is mere happiness
+Cannot drop Members. 
+response is BADREQUEST
 
-## For the other document types, replace "Members" with "Households" or "Addresses"
+## URL = "/Households/create"
+method POST
+request: HouseholdDocument object with blank id
+response: new HouseholdDocument
+
+## URL = "/Households/read"
+query parameter: id. So URL looks like "/Members/read?id=123456789abcdef"
+method GET
+request body is empty
+response is HouseholdDocument or  NOTFOUND
+
+## URL = "/Households/readAll"
+method GET
+request body is empty
+response is (possibly empty) array of HouseholdDocument
+
+## URL = "/Households/update"
+method POST
+request: HouseholdDocument
+response is NOTFOUND if ID not found; or OK or updated HouseholdDocument
+
+## URL = "/Households/drop"
+method POST
+request: empty (ignored)
+response is OK

@@ -36,8 +36,10 @@ class DataOperationsProcessor {
                     case .create:
                         return makeErrorResponse(status: .badRequest, error: nil, response: "cannot create separate Member")
                     case .read:
-                        //TODO
-                        return try LocalCache.sharedInstance.readMember(id: "figure out how to extract id")
+                        guard let queryItems = urlComponents.queryItems, let first = queryItems.first, let id = first.value else {
+                            return makeErrorResponse(status: .badRequest, error: nil, response: "no query item for id")
+                        }
+                        return try LocalCache.sharedInstance.readMember(id: id)
                     case .readAll:
                         return try LocalCache.sharedInstance.readAllMembers()
                     case .update:
@@ -49,18 +51,20 @@ class DataOperationsProcessor {
                 case .households:
                     switch operation {
                     case .create:
-                        let data = try jsonDecoder.decode(NewFamilyData.self, from: operand)
-                        return LocalCache.sharedInstance.createHousehold(data: data, on: eventLoop)
+                        let data = try jsonDecoder.decode(HouseholdDocument.self, from: operand)
+                        return try LocalCache.sharedInstance.createHousehold(data: data, on: eventLoop)
                     case .read:
-                        //TODO
-                        return LocalCache.sharedInstance.readHousehold(id: "figure out how to extract id")
+                        guard let queryItems = urlComponents.queryItems, let first = queryItems.first, let id = first.value else {
+                            return makeErrorResponse(status: .badRequest, error: nil, response: "no query item for id")
+                        }
+                        return try LocalCache.sharedInstance.readHousehold(id: id)
                     case .readAll:
-                        return LocalCache.sharedInstance.readAllHouseholds()
+                        return try LocalCache.sharedInstance.readAllHouseholds()
                     case .update:
                         let household = try jsonDecoder.decode(HouseholdDocument.self, from: operand)
-                        return LocalCache.sharedInstance.update(household: household, on: eventLoop)
+                        return try LocalCache.sharedInstance.update(household: household, on: eventLoop)
                     case .drop:
-                        return LocalCache.sharedInstance.drop()
+                        return try LocalCache.sharedInstance.drop()
                     }
                 case .transaction:
                     return makeErrorResponse(status: .badRequest, error: nil, response: "coming soon")
