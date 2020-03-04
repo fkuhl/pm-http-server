@@ -87,14 +87,40 @@ class LocalCache {
         return makeResponse(status: .ok, response: members)
     }
     
-    func update(member: Member, on: EventLoop) -> HTTPResponse {
-//        let households = try getHouseholds()
-//        guard let old = findMember(id: member.id, among: households) else {
-//            return makeResponse(status: .notFound, response: "id \(member.id) not found")
-//        }
-//        var householdToUpdate = households[member.household]
-        //TODO What happens if the .household property is different?
-        makeResponse(status: .ok, response: "")
+    //TODO This chokes if you try to change the household.
+    func update(member: Member, on: EventLoop) throws -> HTTPResponse {
+        let households = try getHouseholds()
+        guard let old = findMember(id: member.id, among: households) else {
+            return makeResponse(status: .notFound, response: "id \(member.id) not found")
+        }
+        guard old.0.household == member.household else {
+            return makeResponse(status: .badRequest, response: "updated member household, \(member.household), differs from current household, \(old.0.household)")
+        }
+        guard let householdToUpdate = households[member.household] else {
+            return makeResponse(status: .internalServerError, response: "household \(member.household) not recognized")
+        }
+        var editedHousehold = householdToUpdate
+        switch old.1 {
+        case .head:
+            editedHousehold.head = member
+        case .spouse:
+            editedHousehold.spouse? = member
+        case .other:
+            var newOthers = editedHousehold.others
+            for i in 0..<newOthers.count { //yeah, I'm writing Fortran in Swift
+                if newOthers[i].id == member.id {
+                    newOthers[i] = member
+                    break
+                }
+            }
+            editedHousehold.others = newOthers
+        }
+        let succeeded = try getCurrentMongoProxy().replace(document: editedHousehold)
+        if succeeded {
+            return makeResponse(status: .ok, response: member)
+        } else {
+            return makeResponse(status: .internalServerError, response: "update failed")
+        }
     }
     
     func createHousehold(data: NewFamilyData, on: EventLoop) -> HTTPResponse {

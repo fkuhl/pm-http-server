@@ -42,7 +42,7 @@ class DataOperationsProcessor {
                         return try LocalCache.sharedInstance.readAllMembers()
                     case .update:
                         let member = try jsonDecoder.decode(Member.self, from: operand)
-                        return LocalCache.sharedInstance.update(member: member, on: eventLoop)
+                        return try LocalCache.sharedInstance.update(member: member, on: eventLoop)
                     case .drop:
                         return makeErrorResponse(status: .badRequest, error: nil, response: "cannot drop Member")
                     }
