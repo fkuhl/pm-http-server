@@ -69,6 +69,8 @@ class DataOperationsProcessor {
                 case .transaction:
                     return makeErrorResponse(status: .badRequest, error: nil, response: "coming soon")
                 }
+            } catch let decodingError as DecodingError {
+                return makeDecodingErrorResponse(status: .badRequest, error: decodingError, response: path + ": invalid operand")
             } catch {
                 return makeErrorResponse(status: .badRequest, error: error, response: path + ": invalid operand")
             }

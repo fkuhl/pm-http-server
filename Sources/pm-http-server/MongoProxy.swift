@@ -87,7 +87,7 @@ class MongoProxy {
                     //Big Fat Assumption: the Document structure has ID as first element
                     var shornOfId = matchingDocument.dropFirst()
                     logger.debug("Shorn: '\(shornOfId)'")
-                    shornOfId[HouseholdDocument.idFieldName] = BSON.string(idString)
+                    shornOfId[householdIdFieldName] = BSON.string(idString)
                     let document = try decoder.decode(HouseholdDocument.self, from: shornOfId)
                     return  document
                 }
@@ -110,7 +110,7 @@ class MongoProxy {
                 if let idBson = matchingDocument["_id"], let idAsObjectId = idBson.objectIdValue {
                     docNo += 1
                     var trimmed = matchingDocument.dropFirst()
-                    trimmed[HouseholdDocument.idFieldName] = BSON.string(idAsObjectId.hex)
+                    trimmed[householdIdFieldName] = BSON.string(idAsObjectId.hex)
                     do {
                         let value = try decoder.decode(HouseholdDocument.self, from: trimmed)
                         result.append(value)
@@ -173,11 +173,11 @@ class MongoProxy {
 //    }
     
     func drop() throws {
-        do {
+        //do {
             try collection.drop()
-        } catch let error as MongoError {
-            throw MongoProxyError.mongoSwiftError(error)
-        }
+        //} catch let error as MongoError {
+         //   throw MongoProxyError.mongoSwiftError(error)
+        //}
     }
 }
 

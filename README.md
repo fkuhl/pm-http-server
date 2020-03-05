@@ -39,7 +39,7 @@ response is BADREQUEST
 ## URL = "/Households/create"
 method POST
 request: HouseholdDocument object with blank id
-response: new HouseholdDocument
+response: new document ID
 
 ## URL = "/Households/read"
 query parameter: id. So URL looks like "/Members/read?id=123456789abcdef"

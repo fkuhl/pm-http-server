@@ -39,6 +39,15 @@ public func makeErrorResponse(status: HTTPResponseStatus, error: Error?, respons
     return response
 }
 
+public func makeDecodingErrorResponse(status: HTTPResponseStatus, error: DecodingError, response: String) -> HTTPResponse {
+    let errorString = "\(error)" //Decoding errors have more to say if printed as errors
+    logger.error("Error reported, status: \(status.code), error: '\(errorString)', response: \(response)")
+    let responseObject = ErrorResponse(error: errorString, response: response)
+    let responseBody = try! jsonEncoder.encode(responseObject)
+    let response = HTTPResponse(status: status, body: responseBody)
+    return response
+}
+
 public func makeResponse<R: Encodable>(status: HTTPResponseStatus, response: R) -> HTTPResponse {
     let responseBody = try! jsonEncoder.encode(response)
     let response = HTTPResponse(status: status, body: responseBody)

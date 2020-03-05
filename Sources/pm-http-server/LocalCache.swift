@@ -127,7 +127,7 @@ class LocalCache {
         var storedHousehold = data
         if let id = try getCurrentMongoProxy().add(dataValue: data) {
             storedHousehold.id = id
-            return makeResponse(status: .ok, response: storedHousehold)
+            return makeResponse(status: .ok, response: storedHousehold.id)
         } else {
             return makeResponse(status: .internalServerError, response: "something inexplicable occurred on create")
         }
