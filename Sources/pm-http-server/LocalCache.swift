@@ -30,17 +30,12 @@ class LocalCache {
             return currentProxy
         }
         let newProxy = MongoProxy()
-        do {
-            let count = try newProxy.count()
-            logger.info("proxy found \(count) documents")
-            var threadSpecificVariable = mongoProxyStore
-            if threadSpecificVariable == nil {
-                threadSpecificVariable = ThreadSpecificVariable<MongoProxy>()
-            }
-            threadSpecificVariable!.currentValue = newProxy
-            mongoProxyStore = threadSpecificVariable
-            return newProxy
-        }
+        let count = try newProxy.count()
+        logger.info("proxy found \(count) documents")
+        let threadSpecificVariable = mongoProxyStore ?? ThreadSpecificVariable<MongoProxy>()
+        threadSpecificVariable.currentValue = newProxy
+        mongoProxyStore = threadSpecificVariable
+        return newProxy
     }
     
     func readMember(id: Id) throws -> HTTPResponse {
