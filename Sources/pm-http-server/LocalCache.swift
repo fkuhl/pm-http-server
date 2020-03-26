@@ -56,7 +56,7 @@ class LocalCache {
         return index
     }
     
-    //FIXME This probably can be accomplished with a Mongo query
+    //TODO This probably can be accomplished with a Mongo query
     private func findMember(id: Id, among: IndexedHouseholds) -> (Member, HouseholdRelation)? {
         for hd in among.values {
             if id == hd.head.id { return (hd.head, .head) }
@@ -70,19 +70,20 @@ class LocalCache {
         return nil
     }
     
-    //FIXME a Mongo query?
+    //TODO a Mongo query?
     func readAllMembers() throws -> HTTPResponse {
         let rawHouseholds = try getCurrentMongoProxy().readAll()
         var members = [Member]()
         for hd in rawHouseholds {
             members.append(hd.head)
+            NSLog("head sex \(hd.head.sex)")
             if let spouse = hd.spouse { members.append(spouse) }
             members.append(contentsOf: hd.others)
         }
         return makeResponse(status: .ok, response: members)
     }
     
-    //TODO This chokes if you try to change the household.
+    //FIXME This chokes if you try to change the household.
     func update(member: Member, on: EventLoop) throws -> HTTPResponse {
         let households = try getHouseholds()
         guard let old = findMember(id: member.id, among: households) else {
