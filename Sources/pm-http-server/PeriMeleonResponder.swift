@@ -5,7 +5,9 @@
 //  Created by Frederick Kuhl on 9/12/19.
 //
 
-import HTTP
+import Foundation
+import NIO
+import NIOHTTP1
 import Logging
 import PMDataTypes
 
@@ -27,6 +29,10 @@ struct PeriMeleonResponder: HTTPServerResponder {
                                                on: worker.eventLoop)
         return response
     }
+}
+
+public struct HTTPResponse {
+    var status: HTTPResponseStatus = .ok
 }
 
 

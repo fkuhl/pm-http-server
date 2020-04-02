@@ -6,9 +6,9 @@
 //
 
 import Foundation
+import NIO
 import Logging
 import PMDataTypes
-import HTTP
 
 /**
  While this is named 'LocalCache' in fact we cache nothing locally, to avoid worrying about threads.
@@ -76,7 +76,7 @@ class LocalCache {
         var members = [Member]()
         for hd in rawHouseholds {
             members.append(hd.head)
-            NSLog("head sex \(hd.head.sex)")
+            logger.log(level: .debug, "head sex \(hd.head.sex)")
             if let spouse = hd.spouse { members.append(spouse) }
             members.append(contentsOf: hd.others)
         }

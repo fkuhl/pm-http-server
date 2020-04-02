@@ -1,6 +1,6 @@
-import HTTP
-import Logging
 import Foundation
+import NIO
+import Logging
 
 LoggingSystem.bootstrap {
     label in

@@ -5,7 +5,8 @@
 //  Created by Frederick Kuhl on 9/12/19.
 //
 
-import HTTP
+import Foundation
+import NIO
 import Logging
 import PMDataTypes
 
